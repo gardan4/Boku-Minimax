@@ -1,0 +1,48 @@
+(game "Boku"
+    (players 2)
+    (equipment
+        {
+            (board (rotate 90 (hex {5 6 6})))
+            (piece "Ball" Each)
+        }
+    )
+    (rules
+        (play
+            (if
+                (is Prev Mover)
+
+                (move 
+                    Remove 
+                    (sites Pending) 
+                    (then (set Pending (last To)))
+                )
+                
+                (move
+                    Add
+                    (to (difference (sites Empty) (sites Pending)))
+                    (then
+                        (custodial
+                            (from (last To))
+                            (between
+                                (range 2 2)
+                                if:(is Enemy (who at:(between)))
+                                (apply
+                                    (and (set Pending (between)) (moveAgain))
+                                )
+                            )
+                            (to if:(is Friend (who at:(to))))
+                        )
+                    )
+                )
+            )
+        )
+        
+        (end
+            (if
+                (and (is Line 5) (not (is Empty (last To))))
+                (result Mover Win)
+            )
+        )
+    )
+)
+
