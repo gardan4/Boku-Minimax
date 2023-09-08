@@ -4,6 +4,7 @@ import app.StartDesktopApp;
 import manager.ai.AIRegistry;
 import mcts.ExampleDUCT;
 import mcts.ExampleUCT;
+import minimaxBased.NegaMax;
 import random.RandomAI;
 
 /**
@@ -29,6 +30,9 @@ public class LaunchLudii
 			System.err.println("WARNING! Failed to register AI because one with that name already existed!");
 		
 		if (!AIRegistry.registerAI("Example DUCT", () -> {return new ExampleDUCT();}, (game) -> {return new ExampleDUCT().supportsGame(game);}))
+			System.err.println("WARNING! Failed to register AI because one with that name already existed!");
+
+		if (!AIRegistry.registerAI("NegaMax", () -> {return new NegaMax();}, (game) -> {return new NegaMax().supportsGame(game);}))
 			System.err.println("WARNING! Failed to register AI because one with that name already existed!");
 		
 		// Run Ludii
