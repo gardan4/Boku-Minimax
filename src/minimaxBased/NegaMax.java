@@ -8,7 +8,6 @@ import other.context.Context;
 import other.location.Location;
 import other.move.Move;
 import utils.AIUtils;
-
 import java.util.List;
 import java.util.concurrent.ThreadLocalRandom;
 
@@ -133,11 +132,35 @@ public class NegaMax extends AI
             }
         }
 
+        // Check if the current player has won the game with 5 pieces in a line
+        boolean currentPlayerWins = checkWin(coordinatesOfCurrentPlayerPieces);
+
         // Calculate the score based on the number of pieces for the current player and center pieces
         int score = (currentPlayerPieceCount - opponentPieceCount) + (currentPlayerCenterPieceCount - opponentCenterPieceCount) * 2;
+
+        if (currentPlayerWins) {
+            score = Integer.MAX_VALUE; // Assign a maximum score if the current player wins
+        }
+
         System.out.println("score: " + score);
 
         return score;
+    }
+
+    private boolean checkWin(TIntArrayList coordinates) {
+        // Implement the logic to check if the player has 5 pieces in a line and return true if they win
+        // You'll need to examine the coordinates to find winning patterns (e.g., horizontal, vertical, diagonal)
+        // If a winning pattern is found, return true; otherwise, return false.
+        // This logic depends on the specific rules of your game.
+        // You may need to create a separate method for this task.
+        // Example pseudo-code:
+        // if (hasHorizontalWin(coordinates) || hasVerticalWin(coordinates) || hasDiagonalWin(coordinates)) {
+        //     return true;
+        // }
+        // return false;
+
+        // Replace the above example code with your own implementation based on your game's rules.
+        return false;
     }
 
 
