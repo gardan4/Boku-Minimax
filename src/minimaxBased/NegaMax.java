@@ -1,12 +1,15 @@
 package minimaxBased;
 
 import game.Game;
+import gnu.trove.list.array.TIntArrayList;
 import main.collections.FastArrayList;
 import other.AI;
 import other.context.Context;
+import other.location.Location;
 import other.move.Move;
 import utils.AIUtils;
 
+import java.util.List;
 import java.util.concurrent.ThreadLocalRandom;
 
 
@@ -54,6 +57,9 @@ public class NegaMax extends AI
 
             // Create a new context to simulate the move
             Context simulatedContext = new Context(context);
+            TIntArrayList coordinatesofpiecesnew = context.state().owned().sites(1);
+            System.out.println("coordinates of player 1 pieces: " + coordinatesofpiecesnew);
+
             simulatedContext.game().apply(simulatedContext, move);
 
             int value = -negamax(simulatedContext, Maxdepthnew - 1, -beta, -alpha);
@@ -102,16 +108,36 @@ public class NegaMax extends AI
     }
 
     private int evaluate(Context context) {
-        int player = context.state().mover();
-        int opponent = 3 - player; // Assuming a two-player game with player IDs 1 and 2
+//        int cellOwner = context.game().numComponents();
 
-        // Count the number of pieces for each player
-        int playerPieces = 3;
-        int opponentPieces = 1;
+//        int player = context.state().mover();
+//        int opponent = 3 - player; // Assuming a two-player game with player IDs 1 and 2
 
-        // Calculate the difference in pieces as the evaluation score
-        int score = playerPieces - opponentPieces;
-        score = ThreadLocalRandom.current().nextInt(100);
+        TIntArrayList coordinatesOfPlayer1Pieces = context.state().owned().sites(1);
+        TIntArrayList coordinatesOfPlayer2Pieces = context.state().owned().sites(2);
+
+        int player1PieceCount = coordinatesOfPlayer1Pieces.size();
+        int player2PieceCount = coordinatesOfPlayer2Pieces.size();
+
+        // Define the center cell indices
+        int[] centerIndices = {29, 30, 31, 38, 39, 40, 41, 48, 49, 50};
+
+        int player1CenterPieceCount = 0;
+        int player2CenterPieceCount = 0;
+
+        // Count the number of pieces in the center for each player
+        for (int centerIndex : centerIndices) {
+            if (coordinatesOfPlayer1Pieces.contains(centerIndex)) {
+                player1CenterPieceCount++;
+            }
+            if (coordinatesOfPlayer2Pieces.contains(centerIndex)) {
+                player2CenterPieceCount++;
+            }
+        }
+
+        // Calculate the score based on the number of pieces for each player and center pieces
+        int score = (player1PieceCount - player2PieceCount) + (player1CenterPieceCount - player2CenterPieceCount);
+        System.out.println("score: " + score);
 
         return score;
     }
