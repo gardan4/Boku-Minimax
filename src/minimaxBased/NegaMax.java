@@ -44,21 +44,17 @@ public class NegaMax extends AI
     {
         Move bestMove = null;
 
-        int Maxdepthnew = 20;
+        int Maxdepthnew = 4;
         int alpha = Integer.MIN_VALUE;
         int beta = Integer.MAX_VALUE;
         int bestValue = Integer.MIN_VALUE;
-        FastArrayList<Move> legalMoves = AIUtils.extractMovesForMover(game.moves(context).moves(), player);
+        FastArrayList<Move> legalMoves = AIUtils.extractMovesForMover(game.moves(context).moves(), context.state().mover());
 
 
         for (Move move : legalMoves)
         {
-
             // Create a new context to simulate the move
             Context simulatedContext = new Context(context);
-            TIntArrayList coordinatesofpiecesnew = context.state().owned().sites(1);
-//            System.out.println("coordinates of player 1 pieces: " + coordinatesofpiecesnew);
-
             simulatedContext.game().apply(simulatedContext, move);
 
             int value = -negamax(simulatedContext, Maxdepthnew - 1, -beta, -alpha);
@@ -69,7 +65,11 @@ public class NegaMax extends AI
                 bestMove = move;
             }
 
-            alpha = Math.max(alpha, value);
+            if (value > alpha)
+            {
+                alpha = value;
+            }
+
         }
 
     return bestMove;
@@ -77,92 +77,87 @@ public class NegaMax extends AI
     }
 
     private int negamax(Context context, int depth, int alpha, int beta) {
-        if (depth <= 0 || context.trial().over())
+        if (depth == 0 || context.trial().over())
         {
             // Implement your evaluation function here
             return evaluate(context);
         }
 
-        int bestValue = Integer.MIN_VALUE;
+        int score = Integer.MIN_VALUE;
         FastArrayList<Move> legalMoves = AIUtils.extractMovesForMover(context.game().moves(context).moves(), context.state().mover());
 
         for (Move nextMove : legalMoves)
         {
-            context.game().apply(context, nextMove);
-            int value = -negamax(context, depth - 1, -beta, -alpha);
+            Context simulatedContext = new Context(context);
+            simulatedContext.game().apply(simulatedContext, nextMove);
 
-            bestValue = Math.max(bestValue, value);
-            alpha = Math.max(alpha, value);
+            int value = -negamax(simulatedContext, depth - 1, -beta, -alpha);
 
-            if (alpha >= beta)
+            if (value > score)
+            {
+                score = value;
+            }
+
+            if (score > alpha)
+            {
+                alpha = score; // Alpha-beta pruning
+            }
+
+            if (score >= beta)
             {
                 break; // Alpha-beta pruning
             }
         }
 
-        return bestValue;
+        return score;
     }
 
     private int evaluate(Context context) {
 //        int cellOwner = context.game().numComponents();
 
         int currentPlayer = context.state().mover();
-        int opponent = 3 - player; // Assuming a two-player game with player IDs 1 and 2
+        int opponent = 3 - currentPlayer; // Assuming a two-player game with player IDs 1 and 2
+        int score = 0;
+
 
         TIntArrayList coordinatesOfCurrentPlayerPieces = context.state().owned().sites(currentPlayer);
         TIntArrayList coordinatesOfOpponentPieces = context.state().owned().sites(opponent);
 
 
         int currentPlayerPieceCount = coordinatesOfCurrentPlayerPieces.size();
+        score += currentPlayerPieceCount;
+
         int opponentPieceCount = coordinatesOfOpponentPieces.size();
+        score -= opponentPieceCount;
 
         // Define the center cell indices
         int[] centerIndices = {29, 30, 31, 38, 39, 40, 41, 48, 49, 50};
 
-        int currentPlayerCenterPieceCount = 0;
-        int opponentCenterPieceCount = 0;
 
         // Count the number of pieces in the center for each player
         for (int centerIndex : centerIndices) {
             if (coordinatesOfCurrentPlayerPieces.contains(centerIndex)) {
-                currentPlayerCenterPieceCount++;
+                score += 5;
             }
             if (coordinatesOfOpponentPieces.contains(centerIndex)) {
-                opponentCenterPieceCount++;
+                score -= 3;
             }
         }
 
-        // Check if the current player has won the game with 5 pieces in a line
-        boolean currentPlayerWins = checkWin(coordinatesOfCurrentPlayerPieces);
-
         // Calculate the score based on the number of pieces for the current player and center pieces
-        int score = (currentPlayerPieceCount - opponentPieceCount) + (currentPlayerCenterPieceCount - opponentCenterPieceCount) * 2;
+        score += (currentPlayerPieceCount - opponentPieceCount);
 
-        if (currentPlayerWins) {
-            score = Integer.MAX_VALUE; // Assign a maximum score if the current player wins
+
+        if (context.trial().over())
+        {
+            score = 9999;
         }
 
-        System.out.println("score: " + score);
+
+//        System.out.println("score: " + score);
 
         return score;
     }
-
-    private boolean checkWin(TIntArrayList coordinates) {
-        // Implement the logic to check if the player has 5 pieces in a line and return true if they win
-        // You'll need to examine the coordinates to find winning patterns (e.g., horizontal, vertical, diagonal)
-        // If a winning pattern is found, return true; otherwise, return false.
-        // This logic depends on the specific rules of your game.
-        // You may need to create a separate method for this task.
-        // Example pseudo-code:
-        // if (hasHorizontalWin(coordinates) || hasVerticalWin(coordinates) || hasDiagonalWin(coordinates)) {
-        //     return true;
-        // }
-        // return false;
-
-        // Replace the above example code with your own implementation based on your game's rules.
-        return false;
-    }
-
 
     @Override
     public void initAI(final Game game, final int playerID)
