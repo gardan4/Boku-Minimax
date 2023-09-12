@@ -147,12 +147,15 @@ public class NegaMax extends AI
         // Calculate the score based on the number of pieces for the current player and center pieces
         score += (currentPlayerPieceCount - opponentPieceCount);
 
-
-        if (context.trial().over())
+        TIntArrayList win = context.winners();
+        if (win.contains(currentPlayer))
         {
             score = 9999;
         }
-
+        else if (win.contains(opponent))
+        {
+            score = -9999;
+        }
 
 //        System.out.println("score: " + score);
 
