@@ -5,6 +5,7 @@ import gnu.trove.list.array.TIntArrayList;
 import main.collections.FastArrayList;
 import other.AI;
 import other.context.Context;
+import other.context.TempContext;
 import other.location.Location;
 import other.move.Move;
 import utils.AIUtils;
@@ -44,20 +45,22 @@ public class NegaMax extends AI
     {
         Move bestMove = null;
 
-        int Maxdepthnew = 4;
+        int Maxdepthnew = 2;
         int alpha = Integer.MIN_VALUE;
         int beta = Integer.MAX_VALUE;
         int bestValue = Integer.MIN_VALUE;
-        FastArrayList<Move> legalMoves = AIUtils.extractMovesForMover(game.moves(context).moves(), context.state().mover());
+        FastArrayList<Move> legalMoves = game.moves(context).moves();
 
+//        System.out.println("Legal moves: " + legalMoves);
 
         for (Move move : legalMoves)
         {
             // Create a new context to simulate the move
             Context simulatedContext = new Context(context);
             simulatedContext.game().apply(simulatedContext, move);
+//            System.out.println("Simulated context: " + simulatedContext.state().owned().sites(context.state().mover()));
 
-            int value = -negamax(simulatedContext, Maxdepthnew - 1, -beta, -alpha);
+            int value = - negamax(simulatedContext, Maxdepthnew - 1, -beta, -alpha);
 
             if (value > bestValue)
             {
@@ -77,18 +80,29 @@ public class NegaMax extends AI
     }
 
     private int negamax(Context context, int depth, int alpha, int beta) {
+
+        int playerToMakeMove = 3- context.state().mover();
+
         if (depth == 0 || context.trial().over())
         {
             // Implement your evaluation function here
-            return evaluate(context);
+            int value = evaluate(context, playerToMakeMove);
+
+            System.out.println("playerToMakeMove: " + playerToMakeMove);
+            System.out.println("owned spaces terminal" + context.state().owned().sites(playerToMakeMove));
+            System.out.println("value: " + value);
+
+            return value;
         }
 
         int score = Integer.MIN_VALUE;
-        FastArrayList<Move> legalMoves = AIUtils.extractMovesForMover(context.game().moves(context).moves(), context.state().mover());
 
-        for (Move nextMove : legalMoves)
+        FastArrayList<Move> nextLegalMoves = context.game().moves(context).moves();
+        System.out.println("Simulated context: " + nextLegalMoves);
+
+        for (Move nextMove : nextLegalMoves)
         {
-            Context simulatedContext = new Context(context);
+            Context simulatedContext = new TempContext(context);
             simulatedContext.game().apply(simulatedContext, nextMove);
 
             int value = -negamax(simulatedContext, depth - 1, -beta, -alpha);
@@ -112,16 +126,23 @@ public class NegaMax extends AI
         return score;
     }
 
-    private int evaluate(Context context) {
-//        int cellOwner = context.game().numComponents();
+    private int evaluate(Context context, int playerToMakeMove) {
 
-        int currentPlayer = context.state().mover();
-        int opponent = 3 - currentPlayer; // Assuming a two-player game with player IDs 1 and 2
+        if (context.trial().over())
+        {
+            return -9999;
+        }
+
+        int playerLastMadeMove = 3 - playerToMakeMove; // Assuming a two-player game with player IDs 1 and 2
         int score = 0;
 
 
-        TIntArrayList coordinatesOfCurrentPlayerPieces = context.state().owned().sites(currentPlayer);
-        TIntArrayList coordinatesOfOpponentPieces = context.state().owned().sites(opponent);
+        TIntArrayList coordinatesOfCurrentPlayerPieces = context.state().owned().sites(playerToMakeMove);
+
+
+        TIntArrayList coordinatesOfOpponentPieces = context.state().owned().sites(playerLastMadeMove);
+
+
 
 
         int currentPlayerPieceCount = coordinatesOfCurrentPlayerPieces.size();
@@ -147,19 +168,12 @@ public class NegaMax extends AI
         // Calculate the score based on the number of pieces for the current player and center pieces
         score += (currentPlayerPieceCount - opponentPieceCount);
 
-        TIntArrayList win = context.winners();
-        if (win.contains(currentPlayer))
-        {
-            score = 9999;
-        }
-        else if (win.contains(opponent))
-        {
-            score = -9999;
-        }
+        System.out.println("playerToMakeMove: " + playerToMakeMove);
+        System.out.println("owned spaces" + coordinatesOfCurrentPlayerPieces);
+        System.out.println("value: " + score);
 
-//        System.out.println("score: " + score);
 
-        return score;
+        return -score;
     }
 
     @Override
