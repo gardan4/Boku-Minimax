@@ -44,136 +44,132 @@ public class NegaMax extends AI
             )
     {
         Move bestMove = null;
-
-        int Maxdepthnew = 2;
+        int Maxdepthnew = 3;
+        int bestScore = Integer.MIN_VALUE;
         int alpha = Integer.MIN_VALUE;
         int beta = Integer.MAX_VALUE;
-        int bestValue = Integer.MIN_VALUE;
         FastArrayList<Move> legalMoves = game.moves(context).moves();
+        int maxPlayerId = context.state().mover();
 
-//        System.out.println("Legal moves: " + legalMoves);
-
-        for (Move move : legalMoves)
-        {
+        for (Move move : legalMoves) {
             // Create a new context to simulate the move
-            Context simulatedContext = new Context(context);
+            Context simulatedContext = new TempContext(context);
             simulatedContext.game().apply(simulatedContext, move);
-//            System.out.println("Simulated context: " + simulatedContext.state().owned().sites(context.state().mover()));
+            int score = 0;
 
-            int value = - negamax(simulatedContext, Maxdepthnew - 1, -beta, -alpha);
+            if (simulatedContext.trial().over()) {
+                score =  9999;
+            }
+            else {
+                score = minimax(simulatedContext, Maxdepthnew - 1, alpha, beta, false, maxPlayerId);
+            }
 
-            if (value > bestValue)
-            {
-                bestValue = value;
+            if (score > bestScore) {
+                bestScore = score;
                 bestMove = move;
             }
 
-            if (value > alpha)
-            {
-                alpha = value;
-            }
+            alpha = Math.max(alpha, score);
 
+            if (beta <= alpha) {
+                break;
+            }
         }
 
-    return bestMove;
-
+        return bestMove;
     }
 
-    private int negamax(Context context, int depth, int alpha, int beta) {
 
-        int playerToMakeMove = 3- context.state().mover();
+    private int minimax(Context context, int depth, int alpha, int beta, boolean isMaximizingPlayer, int maxPlayerID)
+    {
+        FastArrayList<Move> nextLegalMoves = context.game().moves(context).moves();
 
-        if (depth == 0 || context.trial().over())
-        {
+        if (depth == 0 || context.trial().over()) {
             // Implement your evaluation function here
-            int value = evaluate(context, playerToMakeMove);
-
-            System.out.println("playerToMakeMove: " + playerToMakeMove);
-            System.out.println("owned spaces terminal" + context.state().owned().sites(playerToMakeMove));
-            System.out.println("value: " + value);
-
+            int value = evaluate(context, isMaximizingPlayer, maxPlayerID);
             return value;
         }
 
-        int score = Integer.MIN_VALUE;
-
-        FastArrayList<Move> nextLegalMoves = context.game().moves(context).moves();
-        System.out.println("Simulated context: " + nextLegalMoves);
-
-        for (Move nextMove : nextLegalMoves)
+        if (isMaximizingPlayer)
         {
-            Context simulatedContext = new TempContext(context);
-            simulatedContext.game().apply(simulatedContext, nextMove);
+            int bestScore = Integer.MIN_VALUE;
 
-            int value = -negamax(simulatedContext, depth - 1, -beta, -alpha);
+            for (Move nextMove : nextLegalMoves) {
+                Context simulatedContext = new TempContext(context);
+                simulatedContext.game().apply(simulatedContext, nextMove);
 
-            if (value > score)
-            {
-                score = value;
+                int score = minimax(simulatedContext, depth - 1, alpha, beta, false, maxPlayerID);
+//                System.out.println("Scoremax: " + score);
+
+                alpha = Math.max(alpha, score);
+                bestScore = Math.max(bestScore, score);
+//                System.out.println("Bestscoremax: " + bestScore);
+
+                if (beta <= alpha) {
+                    break;
+                }
             }
+            return bestScore;
+        }
+        else
+        {
+            int bestScore = Integer.MAX_VALUE;
 
-            if (score > alpha)
-            {
-                alpha = score; // Alpha-beta pruning
+            for (Move nextMove : nextLegalMoves) {
+                Context simulatedContext = new TempContext(context);
+                simulatedContext.game().apply(simulatedContext, nextMove);
+
+
+                int score = minimax(simulatedContext, depth - 1, alpha, beta, true, maxPlayerID);
+//                System.out.println("Scoremin: " + score);
+
+
+                beta = Math.min(beta, score);
+                bestScore = Math.min(bestScore, score);
+//                System.out.println("Bestscoremin: " + bestScore);
+
+                if (beta <= alpha) {
+                    break;
+                }
             }
+            return bestScore;
+        }
+    }
 
-            if (score >= beta)
-            {
-                break; // Alpha-beta pruning
+    private int evaluate(Context context, boolean isMaximizingPlayer, int maxPlayerID) {
+        int score = 0;
+
+
+        if (context.trial().over() && isMaximizingPlayer) {
+            return -9999;
+        }
+        else if (context.trial().over() && !isMaximizingPlayer) {
+            return 9999;
+        }
+
+        int[] centerIndices = {29, 30, 31, 38, 39, 40, 41, 48, 49, 50};
+
+        // Get the coordinates of the pieces for each player
+        TIntArrayList coordinatesOfMaxPlayerPieces = context.state().owned().sites(maxPlayerID);
+        TIntArrayList coordinatesOfMinPlayerPieces = context.state().owned().sites(3 - maxPlayerID);
+
+        int maxPlayerPieceCount = coordinatesOfMaxPlayerPieces.size();
+        int minPlayerPieceCount = coordinatesOfMinPlayerPieces.size();
+
+        score += maxPlayerPieceCount;
+        score -= minPlayerPieceCount;
+
+        // Count the number of pieces in the center for each player
+        for (int centerIndex : centerIndices) {
+            if (coordinatesOfMaxPlayerPieces.contains(centerIndex)) {
+                score += 5;
+            }
+            if (coordinatesOfMinPlayerPieces.contains(centerIndex)) {
+                score -= 5;
             }
         }
 
         return score;
-    }
-
-    private int evaluate(Context context, int playerToMakeMove) {
-
-        if (context.trial().over())
-        {
-            return -9999;
-        }
-
-        int playerLastMadeMove = 3 - playerToMakeMove; // Assuming a two-player game with player IDs 1 and 2
-        int score = 0;
-
-
-        TIntArrayList coordinatesOfCurrentPlayerPieces = context.state().owned().sites(playerToMakeMove);
-
-
-        TIntArrayList coordinatesOfOpponentPieces = context.state().owned().sites(playerLastMadeMove);
-
-
-
-
-        int currentPlayerPieceCount = coordinatesOfCurrentPlayerPieces.size();
-        score += currentPlayerPieceCount;
-
-        int opponentPieceCount = coordinatesOfOpponentPieces.size();
-        score -= opponentPieceCount;
-
-        // Define the center cell indices
-        int[] centerIndices = {29, 30, 31, 38, 39, 40, 41, 48, 49, 50};
-
-
-        // Count the number of pieces in the center for each player
-        for (int centerIndex : centerIndices) {
-            if (coordinatesOfCurrentPlayerPieces.contains(centerIndex)) {
-                score += 5;
-            }
-            if (coordinatesOfOpponentPieces.contains(centerIndex)) {
-                score -= 3;
-            }
-        }
-
-        // Calculate the score based on the number of pieces for the current player and center pieces
-        score += (currentPlayerPieceCount - opponentPieceCount);
-
-        System.out.println("playerToMakeMove: " + playerToMakeMove);
-        System.out.println("owned spaces" + coordinatesOfCurrentPlayerPieces);
-        System.out.println("value: " + score);
-
-
-        return -score;
     }
 
     @Override
