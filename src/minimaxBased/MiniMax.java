@@ -80,11 +80,13 @@ public class MiniMax extends AI
     {
         FastArrayList<Move> nextLegalMoves = context.game().moves(context).moves();
 
+        // Check If player has a back to back move to remove a piece
         if (nextLegalMoves.size() != 0) {
             boolean isRemoveMove = nextLegalMoves.get(0).actionType().toString().contains("Remove");
             if (isRemoveMove)
             {
                 //flip isMaximizingPlayer boolean value
+                depth +=1;
                 isMaximizingPlayer = !isMaximizingPlayer;
             }
         }
