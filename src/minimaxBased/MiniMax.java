@@ -6,14 +6,10 @@ import main.collections.FastArrayList;
 import other.AI;
 import other.context.Context;
 import other.context.TempContext;
-import other.location.Location;
 import other.move.Move;
-import utils.AIUtils;
-import java.util.List;
-import java.util.concurrent.ThreadLocalRandom;
 
 
-public class NegaMax extends AI
+public class MiniMax extends AI
 {
 
     //-------------------------------------------------------------------------
@@ -26,9 +22,9 @@ public class NegaMax extends AI
     /**
      * Constructor
      */
-    public NegaMax()
+    public MiniMax()
     {
-        this.friendlyName = "NegaMax AI";
+        this.friendlyName = "MiniMax AI";
     }
 
     //-------------------------------------------------------------------------
@@ -44,7 +40,7 @@ public class NegaMax extends AI
             )
     {
         Move bestMove = null;
-        int Maxdepthnew = 3;
+        int Maxdepthnew = 4;
         int bestScore = Integer.MIN_VALUE;
         int alpha = Integer.MIN_VALUE;
         int beta = Integer.MAX_VALUE;
@@ -83,6 +79,16 @@ public class NegaMax extends AI
     private int minimax(Context context, int depth, int alpha, int beta, boolean isMaximizingPlayer, int maxPlayerID)
     {
         FastArrayList<Move> nextLegalMoves = context.game().moves(context).moves();
+
+        if (nextLegalMoves.size() != 0) {
+            boolean isRemoveMove = nextLegalMoves.get(0).actionType().toString().contains("Remove");
+            if (isRemoveMove)
+            {
+                //flip isMaximizingPlayer boolean value
+                isMaximizingPlayer = !isMaximizingPlayer;
+            }
+        }
+
 
         if (depth == 0 || context.trial().over()) {
             // Implement your evaluation function here
