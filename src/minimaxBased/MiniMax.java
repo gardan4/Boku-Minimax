@@ -40,34 +40,48 @@ public class MiniMax extends AI
             )
     {
         Move bestMove = null;
-        int Maxdepthnew = 4;
+        int Maxdepthnew = 999;
         int bestScore = Integer.MIN_VALUE;
         int alpha = Integer.MIN_VALUE;
         int beta = Integer.MAX_VALUE;
         FastArrayList<Move> legalMoves = game.moves(context).moves();
         int maxPlayerId = context.state().mover();
 
-        for (Move move : legalMoves) {
-            // Create a new context to simulate the move
-            Context simulatedContext = new TempContext(context);
-            simulatedContext.game().apply(simulatedContext, move);
-            int score = 0;
+        long startTime = System.currentTimeMillis();
+        long endTime = startTime + (long) (maxSeconds * 1000);;
 
-            if (simulatedContext.trial().over()) {
-                score =  9999;
+        for (int depth = 1; depth <= Maxdepthnew; depth++) {
+            for (Move move : legalMoves) {
+                // Create a new context to simulate the move
+                Context simulatedContext = new TempContext(context);
+                simulatedContext.game().apply(simulatedContext, move);
+                int score = 0;
+
+                if (simulatedContext.trial().over()) {
+                    score = 9999;
+                } else {
+                    score = minimax(simulatedContext, depth - 1, alpha, beta, false, maxPlayerId);
+                }
+
+                if (score > bestScore) {
+                    bestScore = score;
+                    bestMove = move;
+                }
+
+                alpha = Math.max(alpha, score);
+
+                if (beta <= alpha) {
+                    break;
+                }
+
+                // Check if time limit has been reached
+                if (System.currentTimeMillis() >= endTime) {
+                    break;
+                }
             }
-            else {
-                score = minimax(simulatedContext, Maxdepthnew - 1, alpha, beta, false, maxPlayerId);
-            }
 
-            if (score > bestScore) {
-                bestScore = score;
-                bestMove = move;
-            }
-
-            alpha = Math.max(alpha, score);
-
-            if (beta <= alpha) {
+            // Check if time limit has been reached
+            if (System.currentTimeMillis() >= endTime) {
                 break;
             }
         }
