@@ -7,7 +7,22 @@ import other.AI;
 import other.context.Context;
 import other.context.TempContext;
 import other.move.Move;
+import java.util.HashMap;
 
+// Add a TranspositionTableEntry class to store the necessary information
+class TranspositionTableEntry {
+    int value;
+    int type; // 0 for exact value, 1 for lower bound, 2 for upper bound
+    int depth;
+    Move bestMove;
+
+    public TranspositionTableEntry(int value, int type, int depth, Move bestMove) {
+        this.value = value;
+        this.type = type;
+        this.depth = depth;
+        this.bestMove = bestMove;
+    }
+}
 
 public class MiniMax extends AI
 {
@@ -26,6 +41,10 @@ public class MiniMax extends AI
     {
         this.friendlyName = "MiniMax AI";
     }
+
+    // Define your transposition table
+    private HashMap<Long, TranspositionTableEntry> transpositionTable = new HashMap<>();
+
 
     //-------------------------------------------------------------------------
 
@@ -50,18 +69,19 @@ public class MiniMax extends AI
         long startTime = System.currentTimeMillis();
         long endTime = startTime + (long) (maxSeconds * 1000);;
 
+
+
         for (int depth = 1; depth <= Maxdepthnew; depth++) {
+            System.out.println("Depth: " + depth);
             for (Move move : legalMoves) {
                 // Create a new context to simulate the move
                 Context simulatedContext = new TempContext(context);
                 simulatedContext.game().apply(simulatedContext, move);
+
                 int score = 0;
 
-                if (simulatedContext.trial().over()) {
-                    score = 9999;
-                } else {
-                    score = minimax(simulatedContext, depth - 1, alpha, beta, false, maxPlayerId);
-                }
+                score = minimax(simulatedContext, depth - 1, alpha, beta, false, maxPlayerId, endTime);
+
 
                 if (score > bestScore) {
                     bestScore = score;
@@ -90,8 +110,30 @@ public class MiniMax extends AI
     }
 
 
-    private int minimax(Context context, int depth, int alpha, int beta, boolean isMaximizingPlayer, int maxPlayerID)
+    private int minimax(Context context, int depth, int alpha, int beta, boolean isMaximizingPlayer, int maxPlayerID, long endTime)
     {
+        int olda = alpha;
+        long hashKey = context.state().stateHash();
+
+        // Check if the current state is in the transposition table
+        if (transpositionTable.containsKey(hashKey)) {
+            TranspositionTableEntry entry = transpositionTable.get(hashKey);
+            if (entry.depth >= depth) {
+                if (entry.type == 0) {
+                    return entry.value;
+                }
+                else if (entry.type == 1) {
+                    alpha = Math.max(alpha, entry.value);
+                }
+                else if (entry.type == 2) {
+                    beta = Math.min(beta, entry.value);
+                }
+                if (alpha >= beta) {
+                    return entry.value;
+                }
+            }
+        }
+
         FastArrayList<Move> nextLegalMoves = context.game().moves(context).moves();
 
         // Check If player has a back to back move to remove a piece
@@ -120,7 +162,8 @@ public class MiniMax extends AI
                 Context simulatedContext = new TempContext(context);
                 simulatedContext.game().apply(simulatedContext, nextMove);
 
-                int score = minimax(simulatedContext, depth - 1, alpha, beta, false, maxPlayerID);
+                int score = minimax(simulatedContext, depth - 1, alpha, beta, false, maxPlayerID, endTime);
+
 //                System.out.println("Scoremax: " + score);
 
                 alpha = Math.max(alpha, score);
@@ -130,7 +173,22 @@ public class MiniMax extends AI
                 if (beta <= alpha) {
                     break;
                 }
+
+                // Store the best move in the transposition table
+                if (bestScore > olda) {
+                    transpositionTable.put(hashKey, new TranspositionTableEntry(bestScore, 0, depth, nextMove));
+                }
+                else {
+                    transpositionTable.put(hashKey, new TranspositionTableEntry(bestScore, 1, depth, nextMove));
+                }
+                // Check if time limit has been reached
+                if (System.currentTimeMillis() >= endTime) {
+                    break;
+                }
+
+
             }
+
             return bestScore;
         }
         else
@@ -142,7 +200,7 @@ public class MiniMax extends AI
                 simulatedContext.game().apply(simulatedContext, nextMove);
 
 
-                int score = minimax(simulatedContext, depth - 1, alpha, beta, true, maxPlayerID);
+                int score = minimax(simulatedContext, depth - 1, alpha, beta, true, maxPlayerID, endTime);
 //                System.out.println("Scoremin: " + score);
 
 
@@ -153,7 +211,20 @@ public class MiniMax extends AI
                 if (beta <= alpha) {
                     break;
                 }
+
+                // Store the best move in the transposition table
+                if (bestScore < beta) {
+                    transpositionTable.put(hashKey, new TranspositionTableEntry(bestScore, 0, depth, nextMove));
+                }
+                else {
+                    transpositionTable.put(hashKey, new TranspositionTableEntry(bestScore, 2, depth, nextMove));
+                }
+                // Check if time limit has been reached
+                if (System.currentTimeMillis() >= endTime) {
+                    break;
+                }
             }
+
             return bestScore;
         }
     }
