@@ -60,9 +60,9 @@ public class MiniMax extends AI
     {
         Move bestMove = null;
         int Maxdepthnew =999;
-        int bestScore;
-        int alpha;
-        int beta;
+        int bestScore = Integer.MIN_VALUE;
+        int alpha = Integer.MIN_VALUE;
+        int beta = Integer.MAX_VALUE;
         FastArrayList<Move> legalMoves = game.moves(context).moves();
         int maxPlayerId = context.state().mover();
 
@@ -73,7 +73,7 @@ public class MiniMax extends AI
 
         for (int depth = 1; depth <= Maxdepthnew; depth++) {
 
-            bestScore = Integer.MIN_VALUE;
+//            bestScore = Integer.MIN_VALUE;
             alpha = Integer.MIN_VALUE;
             beta = Integer.MAX_VALUE;
 
@@ -86,7 +86,7 @@ public class MiniMax extends AI
                 int score;
 
 
-                score = minimax(simulatedContext, depth - 1, alpha, beta, false, maxPlayerId, endTime);
+                score = minimax(simulatedContext, depth - 1, alpha, beta, false, maxPlayerId);
 
 
 
@@ -103,9 +103,11 @@ public class MiniMax extends AI
 
                 // Check if time limit has been reached
                 if (System.currentTimeMillis() >= endTime) {
+                    System.out.println("early stop searching depth: " + depth);
                     break;
                 }
             }
+            System.out.println("Done searching depth: " + depth);
 
             // Check if time limit has been reached
             if (System.currentTimeMillis() >= endTime) {
@@ -117,7 +119,7 @@ public class MiniMax extends AI
     }
 
 
-    private int minimax(Context context, int depth, int alpha, int beta, boolean isMaximizingPlayer, int maxPlayerID, long endTime)
+    private int minimax(Context context, int depth, int alpha, int beta, boolean isMaximizingPlayer, int maxPlayerID)
     {
 
         int olda = alpha;
@@ -168,7 +170,7 @@ public class MiniMax extends AI
                 Context simulatedContext = new TempContext(context);
                 simulatedContext.game().apply(simulatedContext, nextMove);
 
-                int score = minimax(simulatedContext, depth - 1, alpha, beta, false, maxPlayerID, endTime);
+                int score = minimax(simulatedContext, depth - 1, alpha, beta, false, maxPlayerID);
 
 
 //                System.out.println("Scoremax: " + score);
@@ -188,10 +190,7 @@ public class MiniMax extends AI
                 else {
                     transpositionTable.put(hashKey, new TranspositionTableEntry(bestScore, 1, depth, nextMove));
                 }
-                // Check if time limit has been reached
-                if (System.currentTimeMillis() >= endTime) {
-                    break;
-                }
+
 
 
             }
@@ -207,7 +206,7 @@ public class MiniMax extends AI
                 simulatedContext.game().apply(simulatedContext, nextMove);
 
 
-                int score = minimax(simulatedContext, depth - 1, alpha, beta, true, maxPlayerID, endTime);
+                int score = minimax(simulatedContext, depth - 1, alpha, beta, true, maxPlayerID);
 
 //                System.out.println("Scoremin: " + score);
 
@@ -227,10 +226,7 @@ public class MiniMax extends AI
                 else {
                     transpositionTable.put(hashKey, new TranspositionTableEntry(bestScore, 2, depth, nextMove));
                 }
-                // Check if time limit has been reached
-                if (System.currentTimeMillis() >= endTime) {
-                    break;
-                }
+
             }
 
             return bestScore;
