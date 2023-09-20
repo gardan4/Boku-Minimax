@@ -59,10 +59,10 @@ public class MiniMax extends AI
             )
     {
         Move bestMove = null;
-        int Maxdepthnew = 999;
-        int bestScore = Integer.MIN_VALUE;
-        int alpha = Integer.MIN_VALUE;
-        int beta = Integer.MAX_VALUE;
+        int Maxdepthnew =999;
+        int bestScore;
+        int alpha;
+        int beta;
         FastArrayList<Move> legalMoves = game.moves(context).moves();
         int maxPlayerId = context.state().mover();
 
@@ -72,15 +72,22 @@ public class MiniMax extends AI
 
 
         for (int depth = 1; depth <= Maxdepthnew; depth++) {
+
+            bestScore = Integer.MIN_VALUE;
+            alpha = Integer.MIN_VALUE;
+            beta = Integer.MAX_VALUE;
+
             System.out.println("Depth: " + depth);
             for (Move move : legalMoves) {
                 // Create a new context to simulate the move
                 Context simulatedContext = new TempContext(context);
                 simulatedContext.game().apply(simulatedContext, move);
 
-                int score = 0;
+                int score;
+
 
                 score = minimax(simulatedContext, depth - 1, alpha, beta, false, maxPlayerId, endTime);
+
 
 
                 if (score > bestScore) {
@@ -112,6 +119,7 @@ public class MiniMax extends AI
 
     private int minimax(Context context, int depth, int alpha, int beta, boolean isMaximizingPlayer, int maxPlayerID, long endTime)
     {
+
         int olda = alpha;
         long hashKey = context.state().stateHash();
 
@@ -136,22 +144,20 @@ public class MiniMax extends AI
 
         FastArrayList<Move> nextLegalMoves = context.game().moves(context).moves();
 
+        if (depth == 0 || context.trial().over()) {
+            // Implement your evaluation function here
+            int value = evaluate(context, isMaximizingPlayer, maxPlayerID);
+            return value;
+        }
+
         // Check If player has a back to back move to remove a piece
         if (nextLegalMoves.size() != 0) {
             boolean isRemoveMove = nextLegalMoves.get(0).actionType().toString().contains("Remove");
             if (isRemoveMove)
             {
                 //flip isMaximizingPlayer boolean value
-                depth +=1;
                 isMaximizingPlayer = !isMaximizingPlayer;
             }
-        }
-
-
-        if (depth == 0 || context.trial().over()) {
-            // Implement your evaluation function here
-            int value = evaluate(context, isMaximizingPlayer, maxPlayerID);
-            return value;
         }
 
         if (isMaximizingPlayer)
@@ -163,6 +169,7 @@ public class MiniMax extends AI
                 simulatedContext.game().apply(simulatedContext, nextMove);
 
                 int score = minimax(simulatedContext, depth - 1, alpha, beta, false, maxPlayerID, endTime);
+
 
 //                System.out.println("Scoremax: " + score);
 
@@ -191,7 +198,7 @@ public class MiniMax extends AI
 
             return bestScore;
         }
-        else
+        else if (!isMaximizingPlayer)
         {
             int bestScore = Integer.MAX_VALUE;
 
@@ -201,6 +208,7 @@ public class MiniMax extends AI
 
 
                 int score = minimax(simulatedContext, depth - 1, alpha, beta, true, maxPlayerID, endTime);
+
 //                System.out.println("Scoremin: " + score);
 
 
@@ -227,24 +235,33 @@ public class MiniMax extends AI
 
             return bestScore;
         }
+        // return error value if something goes wrong throw exception
+        return 9999999;
+
     }
 
     private int evaluate(Context context, boolean isMaximizingPlayer, int maxPlayerID) {
         int score = 0;
 
+        // Get the coordinates of the pieces for each player
+        TIntArrayList coordinatesOfMaxPlayerPieces = context.state().owned().sites(maxPlayerID);
+//        System.out.println("coordinatesOfMaxPlayerPieces: " + coordinatesOfMaxPlayerPieces);
+        TIntArrayList coordinatesOfMinPlayerPieces = context.state().owned().sites(3 - maxPlayerID);
+//        System.out.println("coordinatesOfMinPlayerPieces: " + coordinatesOfMinPlayerPieces);
+
 
         if (context.trial().over() && isMaximizingPlayer) {
+//            System.out.println("Game over maximizer wins, -9999");
             return -9999;
         }
         else if (context.trial().over() && !isMaximizingPlayer) {
+//            System.out.println("Game over minimizer wins, 9999");
             return 9999;
         }
 
         int[] centerIndices = {29, 30, 31, 38, 39, 40, 41, 48, 49, 50};
 
-        // Get the coordinates of the pieces for each player
-        TIntArrayList coordinatesOfMaxPlayerPieces = context.state().owned().sites(maxPlayerID);
-        TIntArrayList coordinatesOfMinPlayerPieces = context.state().owned().sites(3 - maxPlayerID);
+
 
         int maxPlayerPieceCount = coordinatesOfMaxPlayerPieces.size();
         int minPlayerPieceCount = coordinatesOfMinPlayerPieces.size();
@@ -261,6 +278,8 @@ public class MiniMax extends AI
                 score -= 5;
             }
         }
+
+//        System.out.println("Score: " + score);
 
         return score;
     }
