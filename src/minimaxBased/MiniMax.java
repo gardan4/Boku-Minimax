@@ -7,7 +7,10 @@ import other.AI;
 import other.context.Context;
 import other.context.TempContext;
 import other.move.Move;
+
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 
 // Add a TranspositionTableEntry class to store the necessary information
 class TranspositionTableEntry {
@@ -69,16 +72,36 @@ public class MiniMax extends AI
         long startTime = System.currentTimeMillis();
         long endTime = startTime + (long) (maxSeconds * 1000);;
 
-
+        Move previousBestMove = null;
 
         for (int depth = 1; depth <= Maxdepthnew; depth++) {
 
-//            bestScore = Integer.MIN_VALUE;
+            bestScore = Integer.MIN_VALUE;
             alpha = Integer.MIN_VALUE;
             beta = Integer.MAX_VALUE;
 
-            System.out.println("Depth: " + depth);
+            // Create a list to store legal moves ordered by principal variation
+            FastArrayList<Move> orderedMoves = new FastArrayList<>();
+
+            // If there's a previous best move, add it to the front of the ordered moves
+            if (previousBestMove != null) {
+                orderedMoves.add(previousBestMove);
+            }
+
             for (Move move : legalMoves) {
+                // Skip the move if it's the same as the previous best move
+                if (move.equals(previousBestMove)) {
+                    continue;
+                }
+
+                // Add the move to the ordered moves list
+                orderedMoves.add(move);
+            }
+
+            System.out.println("Depth: " + depth);
+            for (Move move : orderedMoves) {
+
+
                 // Create a new context to simulate the move
                 Context simulatedContext = new TempContext(context);
                 simulatedContext.game().apply(simulatedContext, move);
@@ -102,11 +125,15 @@ public class MiniMax extends AI
                 }
 
                 // Check if time limit has been reached
-                if (System.currentTimeMillis() >= endTime) {
-                    System.out.println("early stop searching depth: " + depth);
-                    break;
-                }
+//                if (System.currentTimeMillis() >= endTime) {
+//                    System.out.println("early stop searching depth: " + depth);
+//                    break;
+//                }
             }
+
+            // Store the best move found in this iteration
+            previousBestMove = bestMove;
+
             System.out.println("Done searching depth: " + depth);
 
             // Check if time limit has been reached
