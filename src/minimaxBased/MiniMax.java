@@ -262,6 +262,111 @@ public class MiniMax extends AI
     }
 
     private int evaluate(Context context, boolean isMaximizingPlayer, int maxPlayerID) {
+        //Check if game is over
+        if (context.trial().over() && isMaximizingPlayer) {
+            return Integer.MIN_VALUE;
+        }
+        else if (context.trial().over() && !isMaximizingPlayer) {
+            return Integer.MAX_VALUE;
+        }
+
+        // initialise score
+        int score = 0;
+        Map<Integer, String> indexToCoordinate = createIndexToCoordinateMap();
+        //get the coordinates of the pieces of each player
+        TIntArrayList indicesOfMaxPlayerPieces = context.state().owned().sites(maxPlayerID);
+        TIntArrayList indicesOfMinPlayerPieces = context.state().owned().sites(3 - maxPlayerID);
+        ArrayList<String> coordinatesOfMaxPlayerPieces = new ArrayList<>();
+        ArrayList<String> coordinatesOfMinPlayerPieces = new ArrayList<>();
+        for (int i = 0; i < indicesOfMaxPlayerPieces.size(); i++) {
+            coordinatesOfMaxPlayerPieces.add(indexToCoordinate.get(indicesOfMaxPlayerPieces.get(i)));
+        }
+        for (int i = 0; i < indicesOfMinPlayerPieces.size(); i++) {
+            coordinatesOfMinPlayerPieces.add(indexToCoordinate.get(indicesOfMinPlayerPieces.get(i)));
+        }
+        String[] centerCoords = {"F7", "E6", "D5", "G7", "F6", "E5", "D4", "G6", "F5", "E4"};
+
+        // Count the number of pieces for each player
+        int maxPlayerPieceCount = coordinatesOfMaxPlayerPieces.size();
+        int minPlayerPieceCount = coordinatesOfMinPlayerPieces.size();
+        score += maxPlayerPieceCount;
+        score -= minPlayerPieceCount;
+
+        // Count the number of pieces in the center for each player
+        for (String centerCoord : centerCoords) {
+            if (coordinatesOfMaxPlayerPieces.contains(centerCoord)) {
+                score += 5;
+            }
+            if (coordinatesOfMinPlayerPieces.contains(centerCoord)) {
+                score -= 5;
+            }
+        }
+
+        // detect if a player has 3 pieces in a row, by checking the coordinatesOfPlayerPieces in the 3 possible directions ( vertical, diagonal, anti-diagonal), on the hexagonal board
+        // Do this by having 3 loops: 1 increasing the number, 1 increasing the letter, 1 increasing both
+        // For each loop, check if the next coordinate is in the coordinatesOfPlayerPieces, if so, increase the counter
+        // If the counter reaches 3, return the score
+        // If the counter is 2, check if the next coordinate is empty, if so, increase the score by 1
+        // If the counter is 1, check if the next coordinate is empty, if so, increase the score by 0.5
+        // If the counter is 0, check if the next coordinate is empty, if so, increase the score by 0.25
+
+        // Vertical
+
+        // Loop over the letters
+        for (int i = 0; i < 10; i++) {
+            int counter = 0;
+            // Loop over the numbers
+            for (int j = 0; j < 10; j++) {
+                String coordinate = Character.toString((char) (i + 65)) + Integer.toString(j + 1);
+                if (coordinatesOfMaxPlayerPieces.contains(coordinate)) {
+                    counter++;
+                }
+                else if (coordinatesOfMinPlayerPieces.contains(coordinate)) {
+                    counter--;
+                }
+                else {
+                    if (counter == 3) {
+                        score += 100;
+                        counter = 0;
+                    }
+                    else if (counter == 2) {
+                        score += 1;
+                        counter = 0;
+                    }
+                    else if (counter == 1) {
+                        score += 0.5;
+                        counter = 0;
+                    }
+                    else if (counter == 0) {
+                        score += 0.25;
+                        counter = 0;
+                    }
+                }
+            }
+        }
+
+        return score;
+    }
+
+    @Override
+    public void initAI(final Game game, final int playerID)
+    {
+        this.player = playerID;
+    }
+
+    @Override
+    public boolean supportsGame(final Game game)
+    {
+        if (game.isStochasticGame())
+            return false;
+
+        if (!game.isAlternatingMoveGame())
+            return false;
+
+        return true;
+    }
+
+    private Map<Integer, String> createIndexToCoordinateMap() {
         Map<Integer, String> indexToCoordinate = new TreeMap<>();
 
         // Fill in the mapping here
@@ -346,84 +451,10 @@ public class MiniMax extends AI
         indexToCoordinate.put(78, "D9");
         indexToCoordinate.put(79, "E10");
 
-        // Generate the same exact above list using loops
-        Map<Integer, String> indexToCoordinate2 = new TreeMap<>();
-        int index = 0;
-        for (int i = 0; i < 10; i++) {
-            for (int j = i; j < 10; j++) {
-                String coordinate = indexToCoordinate.get(index);
-                indexToCoordinate2.put(index, coordinate);
-                index++;
-            }
-        }
-
-        //print it
-
-        for (Map.Entry<Integer, String> entry : indexToCoordinate2.entrySet()) {
-            System.out.println(entry.getKey() + " " + entry.getValue());
-        }
-
-
-        int score = 0;
-
-        // Get the coordinates of the pieces for each player
-        TIntArrayList coordinatesOfMaxPlayerPieces = context.state().owned().sites(maxPlayerID);
-//        System.out.println("coordinatesOfMaxPlayerPieces: " + coordinatesOfMaxPlayerPiecesmne/w);
-        TIntArrayList coordinatesOfMinPlayerPieces = context.state().owned().sites(3 - maxPlayerID);
-//        System.out.println("coordinatesOfMinPlayerPieces: " + coordinatesOfMinPlayerPieces);
-
-
-        if (context.trial().over() && isMaximizingPlayer) {
-//            System.out.println("Game over maximizer wins, -9999");
-            return Integer.MIN_VALUE;
-        }
-        else if (context.trial().over() && !isMaximizingPlayer) {
-//            System.out.println("Game over minimizer wins, 9999");
-            return Integer.MAX_VALUE;
-        }
-
-        int[] centerIndices = {29, 30, 31, 38, 39, 40, 41, 48, 49, 50};
-
-
-
-        int maxPlayerPieceCount = coordinatesOfMaxPlayerPieces.size();
-        int minPlayerPieceCount = coordinatesOfMinPlayerPieces.size();
-
-        score += maxPlayerPieceCount;
-        score -= minPlayerPieceCount;
-
-        // Count the number of pieces in the center for each player
-        for (int centerIndex : centerIndices) {
-            if (coordinatesOfMaxPlayerPieces.contains(centerIndex)) {
-                score += 5;
-            }
-            if (coordinatesOfMinPlayerPieces.contains(centerIndex)) {
-                score -= 5;
-            }
-        }
-//        System.out.println("Score: " + score);
-
-        return score;
+//        for (Map.Entry<Integer, String> entry : indexToCoordinate.entrySet()) {
+//            System.out.println(entry.getKey() + " " + entry.getValue());
+//        }
+        return indexToCoordinate;
     }
-
-    @Override
-    public void initAI(final Game game, final int playerID)
-    {
-        this.player = playerID;
-    }
-
-    @Override
-    public boolean supportsGame(final Game game)
-    {
-        if (game.isStochasticGame())
-            return false;
-
-        if (!game.isAlternatingMoveGame())
-            return false;
-
-        return true;
-    }
-
-    //-------------------------------------------------------------------------
 
 }
