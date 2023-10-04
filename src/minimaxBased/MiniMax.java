@@ -302,48 +302,9 @@ public class MiniMax extends AI
             }
         }
 
-        // detect if a player has 3 pieces in a row, by checking the coordinatesOfPlayerPieces in the 3 possible directions ( vertical, diagonal, anti-diagonal), on the hexagonal board
-        // Do this by having 3 loops: 1 increasing the number, 1 increasing the letter, 1 increasing both
-        // For each loop, check if the next coordinate is in the coordinatesOfPlayerPieces, if so, increase the counter
-        // If the counter reaches 3, return the score
-        // If the counter is 2, check if the next coordinate is empty, if so, increase the score by 1
-        // If the counter is 1, check if the next coordinate is empty, if so, increase the score by 0.5
-        // If the counter is 0, check if the next coordinate is empty, if so, increase the score by 0.25
-
-        // Vertical
-
-        // Loop over the letters
-        for (int i = 0; i < 10; i++) {
-            int counter = 0;
-            // Loop over the numbers
-            for (int j = 0; j < 10; j++) {
-                String coordinate = Character.toString((char) (i + 65)) + Integer.toString(j + 1);
-                if (coordinatesOfMaxPlayerPieces.contains(coordinate)) {
-                    counter++;
-                }
-                else if (coordinatesOfMinPlayerPieces.contains(coordinate)) {
-                    counter--;
-                }
-                else {
-                    if (counter == 3) {
-                        score += 100;
-                        counter = 0;
-                    }
-                    else if (counter == 2) {
-                        score += 1;
-                        counter = 0;
-                    }
-                    else if (counter == 1) {
-                        score += 0.5;
-                        counter = 0;
-                    }
-                    else if (counter == 0) {
-                        score += 0.25;
-                        counter = 0;
-                    }
-                }
-            }
-        }
+        // Check if the player has 3 or 4 pieces in a row
+        score += checkThreeOrFourInARow(coordinatesOfMaxPlayerPieces);
+        score -= (int) (checkThreeOrFourInARow(coordinatesOfMinPlayerPieces) * 0.7);
 
         return score;
     }
@@ -364,6 +325,106 @@ public class MiniMax extends AI
             return false;
 
         return true;
+    }
+
+    private int checkThreeOrFourInARow(ArrayList<String> coordinatesOfPlayerPieces) {
+        int score = 0;
+        //loop over the coordinates of the player
+        for (String coord : coordinatesOfPlayerPieces) {
+            // get the letter and number of the coordinate
+            char letter = coord.charAt(0);
+            int number = Integer.parseInt(coord.substring(1));
+
+            // get the coordinate above and if the player has that, then check one higher and if the player has that, then check one higher etc. in a loop
+            int counter = 0;
+            for (int i = 1; i < 4; i++) {
+                String coordAbove = String.valueOf((char) (letter + i)) + number;
+                if (coordinatesOfPlayerPieces.contains(coordAbove)) {
+                    counter += 1;
+                }
+                else {
+                    break;
+                }
+            }
+            // get the coordinate below and if the player has that, then check one lower and if the player has that, then check one lower etc. in a loop
+            for (int i = 1; i < 4; i++) {
+                String coordBelow = String.valueOf((char) (letter - i)) + number;
+                if (coordinatesOfPlayerPieces.contains(coordBelow)) {
+                    counter += 1;
+                }
+                else {
+                    break;
+                }
+            }
+            // if the counter is 2 or higher, then the player has 3 pieces in a row give points for 3 and 4 in a row
+            if (counter >= 2) {
+                score += 10;
+            }
+            if (counter >= 3) {
+                score += 100;
+            }
+
+            // reset the counter
+            counter = 0;
+
+            // Do the same but now increase the number
+            for (int i = 1; i < 4; i++) {
+                String coordAbove = String.valueOf(letter) + (number + i);
+                if (coordinatesOfPlayerPieces.contains(coordAbove)) {
+                    counter += 1;
+                }
+                else {
+                    break;
+                }
+            }
+            for (int i = 1; i < 4; i++) {
+                String coordBelow = String.valueOf(letter) + (number - i);
+                if (coordinatesOfPlayerPieces.contains(coordBelow)) {
+                    counter += 1;
+                }
+                else {
+                    break;
+                }
+            }
+            if (counter >= 2) {
+                score += 10;
+            }
+            if (counter >= 3) {
+                score += 100;
+            }
+
+            // reset the counter
+            counter = 0;
+
+            // Do the same but now increase both
+            for (int i = 1; i < 4; i++) {
+                String coordAbove = String.valueOf((char) (letter + i)) + (number + i);
+                if (coordinatesOfPlayerPieces.contains(coordAbove)) {
+                    counter += 1;
+                }
+                else {
+                    break;
+                }
+            }
+            for (int i = 1; i < 4; i++) {
+                String coordBelow = String.valueOf((char) (letter - i)) + (number - i);
+                if (coordinatesOfPlayerPieces.contains(coordBelow)) {
+                    counter += 1;
+                }
+                else {
+                    break;
+                }
+            }
+            if (counter >= 2) {
+                score += 10;
+            }
+            if (counter >= 3) {
+                score += 100;
+            }
+        }
+
+//        System.out.println("row Score: " + score);
+        return score;
     }
 
     private Map<Integer, String> createIndexToCoordinateMap() {
