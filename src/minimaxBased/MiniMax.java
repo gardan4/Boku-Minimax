@@ -29,6 +29,8 @@ class TranspositionTableEntry {
 public class MiniMax extends AI
 {
     private HashMap<Long, TranspositionTableEntry> transpositionTable;
+    private Map<Integer, String> indexToCoordinate;
+    private String[] centerCoords;
 
     //-------------------------------------------------------------------------
 
@@ -45,7 +47,8 @@ public class MiniMax extends AI
         this.friendlyName = "MiniMax AI";
         this.transpositionTable = new HashMap<>();
         initializeTranspositionTable();
-
+        initializeIndexToCoordinateMap();
+        initializeCenterCoords();
     }
 
     private void initializeTranspositionTable() {
@@ -55,6 +58,110 @@ public class MiniMax extends AI
         // more memory.
         int initialCapacity = 3000000; // Adjust this according to your game's needs
         transpositionTable = new HashMap<>(initialCapacity);
+    }
+
+    private void initializeCenterCoords() {
+        centerCoords = new String[10];
+        centerCoords[0] = "F7";
+        centerCoords[1] = "E6";
+        centerCoords[2] = "D5";
+        centerCoords[3] = "G7";
+        centerCoords[4] = "F6";
+        centerCoords[5] = "E5";
+        centerCoords[6] = "D4";
+        centerCoords[7] = "G6";
+        centerCoords[8] = "F5";
+        centerCoords[9] = "E4";
+    }
+
+    private void initializeIndexToCoordinateMap() {
+        indexToCoordinate = new TreeMap<>();
+
+        // Fill in the mapping here
+        indexToCoordinate.put(0, "F1");
+        indexToCoordinate.put(1, "G2");
+        indexToCoordinate.put(2, "H3");
+        indexToCoordinate.put(3, "I4");
+        indexToCoordinate.put(4, "J5");
+        indexToCoordinate.put(5, "E1");
+        indexToCoordinate.put(6, "F2");
+        indexToCoordinate.put(7, "G3");
+        indexToCoordinate.put(8, "H4");
+        indexToCoordinate.put(9, "I5");
+        indexToCoordinate.put(10, "J6");
+        indexToCoordinate.put(11, "D1");
+        indexToCoordinate.put(12, "E2");
+        indexToCoordinate.put(13, "F3");
+        indexToCoordinate.put(14, "G4");
+        indexToCoordinate.put(15, "H5");
+        indexToCoordinate.put(16, "I6");
+        indexToCoordinate.put(17, "J7");
+        indexToCoordinate.put(18, "C1");
+        indexToCoordinate.put(19, "D2");
+        indexToCoordinate.put(20, "E3");
+        indexToCoordinate.put(21, "F4");
+        indexToCoordinate.put(22, "G5");
+        indexToCoordinate.put(23, "H6");
+        indexToCoordinate.put(24, "I7");
+        indexToCoordinate.put(25, "J8");
+        indexToCoordinate.put(26, "B1");
+        indexToCoordinate.put(27, "C2");
+        indexToCoordinate.put(28, "D3");
+        indexToCoordinate.put(29, "E4");
+        indexToCoordinate.put(30, "F5");
+        indexToCoordinate.put(31, "G6");
+        indexToCoordinate.put(32, "H7");
+        indexToCoordinate.put(33, "I8");
+        indexToCoordinate.put(34, "J9");
+        indexToCoordinate.put(35, "A1");
+        indexToCoordinate.put(36, "B2");
+        indexToCoordinate.put(37, "C3");
+        indexToCoordinate.put(38, "D4");
+        indexToCoordinate.put(39, "E5");
+        indexToCoordinate.put(40, "F6");
+        indexToCoordinate.put(41, "G7");
+        indexToCoordinate.put(42, "H8");
+        indexToCoordinate.put(43, "I9");
+        indexToCoordinate.put(44, "J10");
+        indexToCoordinate.put(45, "A2");
+        indexToCoordinate.put(46, "B3");
+        indexToCoordinate.put(47, "C4");
+        indexToCoordinate.put(48, "D5");
+        indexToCoordinate.put(49, "E6");
+        indexToCoordinate.put(50, "F7");
+        indexToCoordinate.put(51, "G8");
+        indexToCoordinate.put(52, "H9");
+        indexToCoordinate.put(53, "I10");
+        indexToCoordinate.put(54, "A3");
+        indexToCoordinate.put(55, "B4");
+        indexToCoordinate.put(56, "C5");
+        indexToCoordinate.put(57, "D6");
+        indexToCoordinate.put(58, "E7");
+        indexToCoordinate.put(59, "F8");
+        indexToCoordinate.put(60, "G9");
+        indexToCoordinate.put(61, "H10");
+        indexToCoordinate.put(62, "A4");
+        indexToCoordinate.put(63, "B5");
+        indexToCoordinate.put(64, "C6");
+        indexToCoordinate.put(65, "D7");
+        indexToCoordinate.put(66, "E8");
+        indexToCoordinate.put(67, "F9");
+        indexToCoordinate.put(68, "G10");
+        indexToCoordinate.put(69, "A5");
+        indexToCoordinate.put(70, "B6");
+        indexToCoordinate.put(71, "C7");
+        indexToCoordinate.put(72, "D8");
+        indexToCoordinate.put(73, "E9");
+        indexToCoordinate.put(74, "F10");
+        indexToCoordinate.put(75, "A6");
+        indexToCoordinate.put(76, "B7");
+        indexToCoordinate.put(77, "C8");
+        indexToCoordinate.put(78, "D9");
+        indexToCoordinate.put(79, "E10");
+
+//        for (Map.Entry<Integer, String> entry : indexToCoordinate.entrySet()) {
+//            System.out.println(entry.getKey() + " " + entry.getValue());
+//        }
     }
 
 
@@ -272,7 +379,6 @@ public class MiniMax extends AI
 
         // initialise score
         int score = 0;
-        Map<Integer, String> indexToCoordinate = createIndexToCoordinateMap();
         //get the coordinates of the pieces of each player
         TIntArrayList indicesOfMaxPlayerPieces = context.state().owned().sites(maxPlayerID);
         TIntArrayList indicesOfMinPlayerPieces = context.state().owned().sites(3 - maxPlayerID);
@@ -284,7 +390,6 @@ public class MiniMax extends AI
         for (int i = 0; i < indicesOfMinPlayerPieces.size(); i++) {
             coordinatesOfMinPlayerPieces.add(indexToCoordinate.get(indicesOfMinPlayerPieces.get(i)));
         }
-        String[] centerCoords = {"F7", "E6", "D5", "G7", "F6", "E5", "D4", "G6", "F5", "E4"};
 
         // Count the number of pieces for each player
         int maxPlayerPieceCount = coordinatesOfMaxPlayerPieces.size();
@@ -427,95 +532,5 @@ public class MiniMax extends AI
         return score;
     }
 
-    private Map<Integer, String> createIndexToCoordinateMap() {
-        Map<Integer, String> indexToCoordinate = new TreeMap<>();
-
-        // Fill in the mapping here
-        indexToCoordinate.put(0, "F1");
-        indexToCoordinate.put(1, "G2");
-        indexToCoordinate.put(2, "H3");
-        indexToCoordinate.put(3, "I4");
-        indexToCoordinate.put(4, "J5");
-        indexToCoordinate.put(5, "E1");
-        indexToCoordinate.put(6, "F2");
-        indexToCoordinate.put(7, "G3");
-        indexToCoordinate.put(8, "H4");
-        indexToCoordinate.put(9, "I5");
-        indexToCoordinate.put(10, "J6");
-        indexToCoordinate.put(11, "D1");
-        indexToCoordinate.put(12, "E2");
-        indexToCoordinate.put(13, "F3");
-        indexToCoordinate.put(14, "G4");
-        indexToCoordinate.put(15, "H5");
-        indexToCoordinate.put(16, "I6");
-        indexToCoordinate.put(17, "J7");
-        indexToCoordinate.put(18, "C1");
-        indexToCoordinate.put(19, "D2");
-        indexToCoordinate.put(20, "E3");
-        indexToCoordinate.put(21, "F4");
-        indexToCoordinate.put(22, "G5");
-        indexToCoordinate.put(23, "H6");
-        indexToCoordinate.put(24, "I7");
-        indexToCoordinate.put(25, "J8");
-        indexToCoordinate.put(26, "B1");
-        indexToCoordinate.put(27, "C2");
-        indexToCoordinate.put(28, "D3");
-        indexToCoordinate.put(29, "E4");
-        indexToCoordinate.put(30, "F5");
-        indexToCoordinate.put(31, "G6");
-        indexToCoordinate.put(32, "H7");
-        indexToCoordinate.put(33, "I8");
-        indexToCoordinate.put(34, "J9");
-        indexToCoordinate.put(35, "A1");
-        indexToCoordinate.put(36, "B2");
-        indexToCoordinate.put(37, "C3");
-        indexToCoordinate.put(38, "D4");
-        indexToCoordinate.put(39, "E5");
-        indexToCoordinate.put(40, "F6");
-        indexToCoordinate.put(41, "G7");
-        indexToCoordinate.put(42, "H8");
-        indexToCoordinate.put(43, "I9");
-        indexToCoordinate.put(44, "J10");
-        indexToCoordinate.put(45, "A2");
-        indexToCoordinate.put(46, "B3");
-        indexToCoordinate.put(47, "C4");
-        indexToCoordinate.put(48, "D5");
-        indexToCoordinate.put(49, "E6");
-        indexToCoordinate.put(50, "F7");
-        indexToCoordinate.put(51, "G8");
-        indexToCoordinate.put(52, "H9");
-        indexToCoordinate.put(53, "I10");
-        indexToCoordinate.put(54, "A3");
-        indexToCoordinate.put(55, "B4");
-        indexToCoordinate.put(56, "C5");
-        indexToCoordinate.put(57, "D6");
-        indexToCoordinate.put(58, "E7");
-        indexToCoordinate.put(59, "F8");
-        indexToCoordinate.put(60, "G9");
-        indexToCoordinate.put(61, "H10");
-        indexToCoordinate.put(62, "A4");
-        indexToCoordinate.put(63, "B5");
-        indexToCoordinate.put(64, "C6");
-        indexToCoordinate.put(65, "D7");
-        indexToCoordinate.put(66, "E8");
-        indexToCoordinate.put(67, "F9");
-        indexToCoordinate.put(68, "G10");
-        indexToCoordinate.put(69, "A5");
-        indexToCoordinate.put(70, "B6");
-        indexToCoordinate.put(71, "C7");
-        indexToCoordinate.put(72, "D8");
-        indexToCoordinate.put(73, "E9");
-        indexToCoordinate.put(74, "F10");
-        indexToCoordinate.put(75, "A6");
-        indexToCoordinate.put(76, "B7");
-        indexToCoordinate.put(77, "C8");
-        indexToCoordinate.put(78, "D9");
-        indexToCoordinate.put(79, "E10");
-
-//        for (Map.Entry<Integer, String> entry : indexToCoordinate.entrySet()) {
-//            System.out.println(entry.getKey() + " " + entry.getValue());
-//        }
-        return indexToCoordinate;
-    }
 
 }
