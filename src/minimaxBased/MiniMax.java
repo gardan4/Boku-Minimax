@@ -178,7 +178,7 @@ public class MiniMax extends AI
                     final int maxDepth
             )
     {
-        System.out.println("transpositionTable: " + transpositionTable.size());
+        System.out.println("transpositionTable before search: " + transpositionTable.size());
         Move bestMove = null;
         int Maxdepthnew =100;
         int bestScore = Integer.MIN_VALUE;
@@ -204,7 +204,7 @@ public class MiniMax extends AI
 
             // If there's a previous best move, add it to the front of the ordered moves
             if (previousBestMove != null) {
-                orderedMoves.add(previousBestMove);
+                orderedMoves.add(0, previousBestMove);
             }
 
             for (Move move : legalMoves) {
@@ -212,11 +212,12 @@ public class MiniMax extends AI
                 if (move.equals(previousBestMove)) {
                     continue;
                 }
+
                 // Add the move to the ordered moves list
                 orderedMoves.add(move);
             }
 
-            System.out.println("Depth: " + depth);
+//            System.out.println("Depth: " + depth);
             for (Move move : orderedMoves) {
 
 
@@ -250,11 +251,12 @@ public class MiniMax extends AI
 
             // Check if time limit has been reached
             if (System.currentTimeMillis() >= endTime) {
+                System.out.println("time delta: " + ((System.currentTimeMillis() - startTime) / 1000.0));
                 break;
             }
         }
 
-        System.out.println("transpositionTable: " + transpositionTable.size());
+        System.out.println("transpositionTable after search: " + transpositionTable.size());
         return bestMove;
     }
 
@@ -262,7 +264,7 @@ public class MiniMax extends AI
     private int minimax(Context context, int depth, int alpha, int beta, boolean isMaximizingPlayer, int maxPlayerID)
     {
         int olda = alpha;
-        long hashKey = context.state().stateHash() + context.state().mover() + depth;
+        long hashKey = context.state().stateHash();
 //        System.out.println("hashKey: " + hashKey);
 
         // Check if the current state is in the transposition table
@@ -394,22 +396,24 @@ public class MiniMax extends AI
         // Count the number of pieces for each player
         int maxPlayerPieceCount = coordinatesOfMaxPlayerPieces.size();
         int minPlayerPieceCount = coordinatesOfMinPlayerPieces.size();
-        score += maxPlayerPieceCount;
-        score -= minPlayerPieceCount;
+        score += maxPlayerPieceCount * 3;
+        score -= minPlayerPieceCount * 3;
 
         // Count the number of pieces in the center for each player
         for (String centerCoord : centerCoords) {
             if (coordinatesOfMaxPlayerPieces.contains(centerCoord)) {
-                score += 5;
+                score += 2;
             }
             if (coordinatesOfMinPlayerPieces.contains(centerCoord)) {
-                score -= 5;
+                score -= 2;
             }
         }
 
         // Check if the player has 3 or 4 pieces in a row
+        //todo: lines are not that useful if they cant be finished
+        //todo: make lines that need to be blocked in such a way that they match up with another opponent piece so that an opponent piece can possibly be removed
         score += checkThreeOrFourInARow(coordinatesOfMaxPlayerPieces);
-        score -= (int) (checkThreeOrFourInARow(coordinatesOfMinPlayerPieces) * 0.7);
+        score -= (int) (checkThreeOrFourInARow(coordinatesOfMinPlayerPieces));
 
         return score;
     }
@@ -434,6 +438,8 @@ public class MiniMax extends AI
 
     private int checkThreeOrFourInARow(ArrayList<String> coordinatesOfPlayerPieces) {
         int score = 0;
+        int threeInARow = 5;
+        int fourInARow = 15;
         //loop over the coordinates of the player
         for (String coord : coordinatesOfPlayerPieces) {
             // get the letter and number of the coordinate
@@ -463,10 +469,10 @@ public class MiniMax extends AI
             }
             // if the counter is 2 or higher, then the player has 3 pieces in a row give points for 3 and 4 in a row
             if (counter >= 2) {
-                score += 10;
+                score += threeInARow;
             }
             if (counter >= 3) {
-                score += 100;
+                score += fourInARow;
             }
 
             // reset the counter
@@ -492,10 +498,10 @@ public class MiniMax extends AI
                 }
             }
             if (counter >= 2) {
-                score += 10;
+                score += threeInARow;
             }
             if (counter >= 3) {
-                score += 100;
+                score += fourInARow;
             }
 
             // reset the counter
@@ -521,10 +527,10 @@ public class MiniMax extends AI
                 }
             }
             if (counter >= 2) {
-                score += 10;
+                score += threeInARow;
             }
             if (counter >= 3) {
-                score += 100;
+                score += fourInARow;
             }
         }
 
