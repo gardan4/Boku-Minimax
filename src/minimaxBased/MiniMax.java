@@ -470,6 +470,18 @@ public class MiniMax extends AI
             }
         }
 
+        FastArrayList<Move> moves = context.game().moves(context).moves();
+        for (Move move : moves) {
+            if (move.actionType().toString().contains("Remove")) {
+                if (isMaximizingPlayer) {
+                    score -= 5;
+                }
+                else {
+                    score += 5;
+                }
+            }
+        }
+
         // Check if the player has 3 or 4 pieces in a row
         //todo: lines are not that useful if they cant be finished
         //todo: make lines that need to be blocked in such a way that they match up with another opponent piece so that an opponent piece can possibly be removed
