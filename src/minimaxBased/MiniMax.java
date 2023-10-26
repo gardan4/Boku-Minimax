@@ -209,33 +209,28 @@ public class MiniMax extends AI
 
             // Create a list to store legal moves ordered by principal variation
             FastArrayList<Move> orderedMoves = new FastArrayList<>();
+            FastArrayList<Move>  killerMovesList = new FastArrayList<>();
 
-            boolean pcpfilled = false;
-            for (Move move : legalMoves) {
-                // PCP move first
-                if (move.equals(previousBestMove) || previousBestMove != null) {
-                    orderedMoves.add(0, previousBestMove);
-                    pcpfilled = true;
-                }
-                //Killer moves second
-                else if (killerMoves[depth][context.state().mover()-1].contains(move) && !pcpfilled) {
-                    orderedMoves.add(0, move);
-                }
-                //Killer moves second
-                else if (killerMoves[depth][context.state().mover()-1].contains(move) && pcpfilled) {
-                    orderedMoves.add(1, move);
-                }
-                else {
-                    orderedMoves.add(move);
+            //Move ordering
+            for (Move nextMove : legalMoves) {
+                // Check if the move is a killer move for the current depth and player
+                if (killerMoves[depth][context.state().mover()-1].contains(nextMove)) {
+                    killerMovesList.add(nextMove);
                 }
             }
+            // Add bestmove to the front of the list
+            if (previousBestMove != null) {
+                orderedMoves.add(bestMove);
+            }
+            // concatinate killer moves to the list
+            orderedMoves.addAll(killerMovesList);
+            // concatinate the rest of the moves to the list
+            orderedMoves.addAll(legalMoves);
 
             // Create a new context to simulate the move
             Context simulatedContext = new TempContext(context);
 
             for (Move move : orderedMoves) {
-
-
                 //apply the move
                 simulatedContext.game().apply(simulatedContext, move);
 
@@ -272,6 +267,8 @@ public class MiniMax extends AI
             // Store the best move found in this iteration
             previousBestMove = bestMove;
             System.out.println("Done searching depth: " + depth);
+            //print bestscore
+            System.out.println("bestScore: " + bestScore);
 
             // Check if time limit has been reached
             if (System.currentTimeMillis() >= endTime) {
@@ -323,26 +320,24 @@ public class MiniMax extends AI
 
         FastArrayList<Move> nextLegalMoves = context.game().moves(context).moves();
         FastArrayList<Move> orderedMoves = new FastArrayList<>();
+        FastArrayList<Move>  killerMovesList = new FastArrayList<>();
 
-        boolean pcpfilled = false;
+        //Move ordering
         for (Move nextMove : nextLegalMoves) {
-            // PCP move first
-            if (nextMove.equals(bestMove)) {
-                orderedMoves.add(0, nextMove);
-                pcpfilled = true;
-            }
             // Check if the move is a killer move for the current depth and player
-            else if (killerMoves[depth][context.state().mover()-1].contains(nextMove) && !pcpfilled) {
-                // Try the killer move first
-                orderedMoves.add(0, nextMove);
-            }
-            else if (killerMoves[depth][context.state().mover()-1].contains(nextMove) && pcpfilled) {
-                orderedMoves.add(1, nextMove);
-            }
-            else {
-                orderedMoves.add(nextMove);
+            if (killerMoves[depth][context.state().mover()-1].contains(nextMove)) {
+                killerMovesList.add(nextMove);
             }
         }
+        // Add bestmove to the front of the list
+        if (bestMove != null) {
+            orderedMoves.add(bestMove);
+        }
+        // concatinate killer moves to the list
+        orderedMoves.addAll(killerMovesList);
+        // concatinate the rest of the moves to the list
+        orderedMoves.addAll(nextLegalMoves);
+
 
         // Check If player has a back to back move to remove a piece
         if (orderedMoves.size() != 0) {
@@ -363,6 +358,7 @@ public class MiniMax extends AI
 
             // Loop through the legal moves
             for (Move nextMove : orderedMoves) {
+
                 simulatedContext.game().apply(simulatedContext, nextMove);
 
                 int score = minimax(simulatedContext, depth - 1, alpha, beta, false, maxPlayerID, killerMoves);
@@ -374,14 +370,13 @@ public class MiniMax extends AI
                 if (score > bestScore) {
                     bestScore = score;
                     bestMove = nextMove;
-                }
-
-                if (beta <= alpha) {
-                    // Store the move as a killer move for the current depth and player
-                    if (!killerMoves[depth][context.state().mover()-1].contains(nextMove)) {
-                        killerMoves[depth][context.state().mover()-1].add(0, nextMove);
+                    if (beta <= alpha) {
+                        // Store the move as a killer move for the current depth and player
+                        if (!killerMoves[depth][context.state().mover()-1].contains(nextMove)) {
+                            killerMoves[depth][context.state().mover()-1].add(0, nextMove);
+                        }
+                        break;
                     }
-                    break;
                 }
 
                 // Store the best move in the transposition table
@@ -414,14 +409,13 @@ public class MiniMax extends AI
                 if (score < bestScore) {
                     bestScore = score;
                     bestMove = nextMove;
-                }
-
-                if (beta <= alpha) {
-                    // Store the move as a killer move for the current depth and player
-                    if (!killerMoves[depth][context.state().mover()-1].contains(nextMove)) {
-                        killerMoves[depth][context.state().mover()-1].add(0, nextMove);
+                    if (beta <= alpha) {
+                        // Store the move as a killer move for the current depth and player
+                        if (!killerMoves[depth][context.state().mover()-1].contains(nextMove)) {
+                            killerMoves[depth][context.state().mover()-1].add(0, nextMove);
+                        }
+                        break;
                     }
-                    break;
                 }
 
                 // Store the best move in the transposition table
@@ -463,8 +457,8 @@ public class MiniMax extends AI
         // Count the number of pieces for each player
         int maxPlayerPieceCount = coordinatesOfMaxPlayerPieces.size();
         int minPlayerPieceCount = coordinatesOfMinPlayerPieces.size();
-        score += maxPlayerPieceCount * 3;
-        score -= minPlayerPieceCount * 3;
+        score += maxPlayerPieceCount * 4;
+        score -= minPlayerPieceCount * 4;
 
         // Count the number of pieces in the center for each player
         for (String centerCoord : centerCoords) {
