@@ -370,14 +370,13 @@ public class MiniMax extends AI
                 if (score > bestScore) {
                     bestScore = score;
                     bestMove = nextMove;
-                }
-
-                if (beta <= alpha) {
-                    // Store the move as a killer move for the current depth and player
-                    if (!killerMoves[depth][context.state().mover()-1].contains(nextMove)) {
-                        killerMoves[depth][context.state().mover()-1].add(0, nextMove);
+                    if (beta <= alpha) {
+                        // Store the move as a killer move for the current depth and player
+                        if (!killerMoves[depth][context.state().mover()-1].contains(nextMove)) {
+                            killerMoves[depth][context.state().mover()-1].add(0, nextMove);
+                        }
+                        break;
                     }
-                    break;
                 }
 
                 // Store the best move in the transposition table
@@ -410,14 +409,13 @@ public class MiniMax extends AI
                 if (score < bestScore) {
                     bestScore = score;
                     bestMove = nextMove;
-                }
-
-                if (beta <= alpha) {
-                    // Store the move as a killer move for the current depth and player
-                    if (!killerMoves[depth][context.state().mover()-1].contains(nextMove)) {
-                        killerMoves[depth][context.state().mover()-1].add(0, nextMove);
+                    if (beta <= alpha) {
+                        // Store the move as a killer move for the current depth and player
+                        if (!killerMoves[depth][context.state().mover()-1].contains(nextMove)) {
+                            killerMoves[depth][context.state().mover()-1].add(0, nextMove);
+                        }
+                        break;
                     }
-                    break;
                 }
 
                 // Store the best move in the transposition table
