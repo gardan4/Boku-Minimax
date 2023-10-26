@@ -9,6 +9,7 @@ import other.context.TempContext;
 import other.location.Location;
 import other.move.Move;
 
+import java.io.Console;
 import java.util.*;
 
 // Add a TranspositionTableEntry class to store the necessary information
@@ -181,9 +182,9 @@ public class MiniMax extends AI
         System.out.println("transpositionTable before search: " + transpositionTable.size());
         Move bestMove = null;
         int Maxdepthnew =100;
-        int bestScore = Integer.MIN_VALUE;
-        int alpha = Integer.MIN_VALUE;
-        int beta = Integer.MAX_VALUE;
+        int bestScore;
+        int alpha;
+        int beta;
         FastArrayList<Move> legalMoves = game.moves(context).moves();
         int maxPlayerId = context.state().mover();
 
@@ -191,6 +192,13 @@ public class MiniMax extends AI
         long endTime = startTime + (long) (maxSeconds * 1000);;
 
         Move previousBestMove = null;
+
+        // Create a two-dimensional array to store killer moves for each depth and player
+        FastArrayList<Move>[][] killerMoves = new FastArrayList[Maxdepthnew][2];
+        for (int i = 0; i < Maxdepthnew; i++) {
+            killerMoves[i][0] = new FastArrayList<>();
+            killerMoves[i][1] = new FastArrayList<>();
+        }
 
         // Loop through the depths while game is not over
         for (int depth = 1; depth <= Maxdepthnew; depth++) {
@@ -202,45 +210,61 @@ public class MiniMax extends AI
             // Create a list to store legal moves ordered by principal variation
             FastArrayList<Move> orderedMoves = new FastArrayList<>();
 
-            // If there's a previous best move, add it to the front of the ordered moves
-            if (previousBestMove != null) {
-                orderedMoves.add(0, previousBestMove);
-            }
-
+            boolean pcpfilled = false;
             for (Move move : legalMoves) {
-                // Skip the move if it's the same as the previous best move
-                if (move.equals(previousBestMove)) {
-                    continue;
+                // PCP move first
+                if (move.equals(previousBestMove) || previousBestMove != null) {
+                    orderedMoves.add(0, previousBestMove);
+                    pcpfilled = true;
                 }
-
-                // Add the move to the ordered moves list
-                orderedMoves.add(move);
+                //Killer moves second
+                else if (killerMoves[depth][context.state().mover()-1].contains(move) && !pcpfilled) {
+                    orderedMoves.add(0, move);
+                }
+                //Killer moves second
+                else if (killerMoves[depth][context.state().mover()-1].contains(move) && pcpfilled) {
+                    orderedMoves.add(1, move);
+                }
+                else {
+                    orderedMoves.add(move);
+                }
             }
 
-//            System.out.println("Depth: " + depth);
+            // Create a new context to simulate the move
+            Context simulatedContext = new TempContext(context);
+
             for (Move move : orderedMoves) {
 
 
-                // Create a new context to simulate the move
-                Context simulatedContext = new TempContext(context);
+                //apply the move
                 simulatedContext.game().apply(simulatedContext, move);
 
+                // Check if the game is over
                 int score;
                 if (simulatedContext.trial().over()) {
                     score = Integer.MAX_VALUE;
                     bestMove = move;
                     return bestMove;
-                } else {
-                    score = minimax(simulatedContext, depth - 1, alpha, beta, false, maxPlayerId);
                 }
+                else
+                {
+                    score = minimax(simulatedContext, depth - 1, alpha, beta, false, maxPlayerId, killerMoves);
+                }
+                // undo the move
+                simulatedContext.game().undo(simulatedContext);
 
+                // Check if the score is better than the best score
                 if (score > bestScore) {
                     bestScore = score;
                     bestMove = move;
                 }
+                // Update alpha and beta
                 alpha = Math.max(alpha, score);
-
                 if (beta <= alpha) {
+                    // This is a beta cutoff; store the move as a killer move
+                    if (!killerMoves[depth][context.state().mover()-1].contains(move)) {
+                        killerMoves[depth][context.state().mover()-1].add(move);
+                    }
                     break;
                 }
             }
@@ -261,15 +285,18 @@ public class MiniMax extends AI
     }
 
 
-    private int minimax(Context context, int depth, int alpha, int beta, boolean isMaximizingPlayer, int maxPlayerID)
+    private int minimax(Context context, int depth, int alpha, int beta, boolean isMaximizingPlayer, int maxPlayerID, FastArrayList<Move>[][] killerMoves)
     {
+        Move bestMove = null;
         int olda = alpha;
-        long hashKey = context.state().stateHash();
+        long hashKey = context.state().fullHash() ^ context.state().mover();
 //        System.out.println("hashKey: " + hashKey);
 
         // Check if the current state is in the transposition table
         if (transpositionTable.containsKey(hashKey)) {
             TranspositionTableEntry entry = transpositionTable.get(hashKey);
+            bestMove = entry.bestMove;
+
             if (entry.depth >= depth) {
                 if (entry.type == 0) {
                     return entry.value;
@@ -295,10 +322,31 @@ public class MiniMax extends AI
         }
 
         FastArrayList<Move> nextLegalMoves = context.game().moves(context).moves();
+        FastArrayList<Move> orderedMoves = new FastArrayList<>();
+
+        boolean pcpfilled = false;
+        for (Move nextMove : nextLegalMoves) {
+            // PCP move first
+            if (nextMove.equals(bestMove)) {
+                orderedMoves.add(0, nextMove);
+                pcpfilled = true;
+            }
+            // Check if the move is a killer move for the current depth and player
+            else if (killerMoves[depth][context.state().mover()-1].contains(nextMove) && !pcpfilled) {
+                // Try the killer move first
+                orderedMoves.add(0, nextMove);
+            }
+            else if (killerMoves[depth][context.state().mover()-1].contains(nextMove) && pcpfilled) {
+                orderedMoves.add(1, nextMove);
+            }
+            else {
+                orderedMoves.add(nextMove);
+            }
+        }
 
         // Check If player has a back to back move to remove a piece
-        if (nextLegalMoves.size() != 0) {
-            boolean isRemoveMove = nextLegalMoves.get(0).actionType().toString().contains("Remove");
+        if (orderedMoves.size() != 0) {
+            boolean isRemoveMove = orderedMoves.get(0).actionType().toString().contains("Remove");
             if (isRemoveMove)
             {
                 //flip isMaximizingPlayer boolean value
@@ -310,59 +358,78 @@ public class MiniMax extends AI
         if (isMaximizingPlayer)
         {
             int bestScore = Integer.MIN_VALUE;
+            Context simulatedContext = new TempContext(context);
 
-            for (Move nextMove : nextLegalMoves) {
-                Context simulatedContext = new TempContext(context);
+
+            // Loop through the legal moves
+            for (Move nextMove : orderedMoves) {
                 simulatedContext.game().apply(simulatedContext, nextMove);
 
-                int score = minimax(simulatedContext, depth - 1, alpha, beta, false, maxPlayerID);
+                int score = minimax(simulatedContext, depth - 1, alpha, beta, false, maxPlayerID, killerMoves);
 
-
-//                System.out.println("Scoremax: " + score);
+                // undo the move
+                simulatedContext.game().undo(simulatedContext);
 
                 alpha = Math.max(alpha, score);
-                bestScore = Math.max(bestScore, score);
-//                System.out.println("Bestscoremax: " + bestScore);
+                if (score > bestScore) {
+                    bestScore = score;
+                    bestMove = nextMove;
+                }
 
                 if (beta <= alpha) {
+                    // Store the move as a killer move for the current depth and player
+                    if (!killerMoves[depth][context.state().mover()-1].contains(nextMove)) {
+                        killerMoves[depth][context.state().mover()-1].add(0, nextMove);
+                    }
                     break;
                 }
 
                 // Store the best move in the transposition table
                 if (bestScore > olda) {
-                    transpositionTable.put(hashKey, new TranspositionTableEntry(bestScore, 0, depth, nextMove));
+                    transpositionTable.put(hashKey, new TranspositionTableEntry(bestScore, 0, depth, bestMove));
                 }
                 else {
-                    transpositionTable.put(hashKey, new TranspositionTableEntry(bestScore, 1, depth, nextMove));
+                    transpositionTable.put(hashKey, new TranspositionTableEntry(bestScore, 1, depth, bestMove));
                 }
+
             }
+
             return bestScore;
         }
         // Minimizing player
         else
         {
             int bestScore = Integer.MAX_VALUE;
+            Context simulatedContext = new TempContext(context);
 
-            for (Move nextMove : nextLegalMoves) {
-                Context simulatedContext = new TempContext(context);
+            for (Move nextMove : orderedMoves) {
                 simulatedContext.game().apply(simulatedContext, nextMove);
 
-                int score = minimax(simulatedContext, depth - 1, alpha, beta, true, maxPlayerID);
+                int score = minimax(simulatedContext, depth - 1, alpha, beta, true, maxPlayerID, killerMoves);
+
+                // undo the move
+                simulatedContext.game().undo(simulatedContext);
 
                 beta = Math.min(beta, score);
-                bestScore = Math.min(bestScore, score);
-//                System.out.println("Bestscoremin: " + bestScore);
+                if (score < bestScore) {
+                    bestScore = score;
+                    bestMove = nextMove;
+                }
 
                 if (beta <= alpha) {
+                    // Store the move as a killer move for the current depth and player
+                    if (!killerMoves[depth][context.state().mover()-1].contains(nextMove)) {
+                        killerMoves[depth][context.state().mover()-1].add(0, nextMove);
+                    }
                     break;
                 }
 
                 // Store the best move in the transposition table
                 if (bestScore < beta) {
-                    transpositionTable.put(hashKey, new TranspositionTableEntry(bestScore, 0, depth, nextMove));
+                    transpositionTable.put(hashKey, new TranspositionTableEntry(bestScore, 0, depth, bestMove));
                 }
                 else {
-                    transpositionTable.put(hashKey, new TranspositionTableEntry(bestScore, 2, depth, nextMove));
+                    transpositionTable.put(hashKey, new TranspositionTableEntry(bestScore, 2, depth, bestMove));
                 }
             }
             return bestScore;
