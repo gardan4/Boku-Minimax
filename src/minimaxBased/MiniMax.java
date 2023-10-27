@@ -225,7 +225,12 @@ public class MiniMax extends AI
             // concatinate killer moves to the list
             orderedMoves.addAll(killerMovesList);
             // concatinate the rest of the moves to the list
-            orderedMoves.addAll(legalMoves);
+            // concatinate nextlegalmoves moves to the orderedmoves list minus the killer moves and best move
+            for (Move nextMove : legalMoves) {
+                if (!killerMovesList.contains(nextMove) && !nextMove.equals(bestMove)) {
+                    orderedMoves.add(nextMove);
+                }
+            }
 
             // Create a new context to simulate the move
             Context simulatedContext = new TempContext(context);
@@ -344,8 +349,13 @@ public class MiniMax extends AI
         }
         // concatinate killer moves to the list
         orderedMoves.addAll(killerMovesList);
-        // concatinate the rest of the moves to the list
-        orderedMoves.addAll(nextLegalMoves);
+        // concatinate nextlegalmoves moves to the orderedmoves list minus the killer moves and best move
+        for (Move nextMove : nextLegalMoves) {
+            if (!killerMovesList.contains(nextMove) && !nextMove.equals(bestMove)) {
+                orderedMoves.add(nextMove);
+            }
+        }
+
 
 
         // Check If player has a back to back move to remove a piece
