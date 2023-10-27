@@ -57,7 +57,7 @@ public class MiniMax extends AI
         // The size should depend on the expected number of unique positions
         // in your game tree. A larger table can handle more positions but uses
         // more memory.
-        int initialCapacity = 3000000; // Adjust this according to your game's needs
+        int initialCapacity = 3500000; // Adjust this according to your game's needs
         transpositionTable = new HashMap<>(initialCapacity);
     }
 
@@ -286,7 +286,16 @@ public class MiniMax extends AI
     {
         Move bestMove = null;
         int olda = alpha;
-        long hashKey = context.state().fullHash() ^ context.state().mover();
+        long hashKey;
+        if (context.game().moves(context).moves().get(0).actionType().toString().contains("Remove"))
+        {
+            hashKey = context.state().stateHash() ^ context.state().mover() ^ 1;
+        }
+        else
+        {
+            hashKey = context.state().stateHash() ^ context.state().mover() ^ 0;
+        }
+
 //        System.out.println("hashKey: " + hashKey);
 
         // Check if the current state is in the transposition table
