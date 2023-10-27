@@ -553,7 +553,7 @@ public class MiniMax extends AI
 
             // get the coordinate above and if the player has that, then check one higher and if the player has that, then check one higher etc. in a loop
             int counter = 0;
-            for (int i = 0; i < 5; i++) {
+            for (int i = 1; i < 6; i++) {
                 String coordAbove = String.valueOf((char) (letter + i)) + number;
                 if (coordinatesOfMaxPlayerPieces.contains(coordAbove)) {
                     counter += 1;
@@ -565,6 +565,7 @@ public class MiniMax extends AI
                         String coordAbove2 = String.valueOf((char) (letter + i + j)) + number;
                         if (coordinatesOfMinPlayerPieces.contains(coordAbove2) && j == 1) {
                             fullyBlocked = true;
+                            partiallyBlocked = false;
                         }
                         else if (!coordinatesOfMinPlayerPieces.contains(coordAbove2) && !coordinatesOfMaxPlayerPieces.contains(coordAbove2) && j == 2) {
                             trappable = true;
@@ -578,7 +579,7 @@ public class MiniMax extends AI
                 }
             }
             // get the coordinate below and if the player has that, then check one lower and if the player has that, then check one lower etc. in a loop
-            for (int i = 1; i < 4; i++) {
+            for (int i = 1; i < 6; i++) {
                 String coordBelow = String.valueOf((char) (letter - i)) + number;
                 if (coordinatesOfMaxPlayerPieces.contains(coordBelow)) {
                     counter += 1;
@@ -588,13 +589,14 @@ public class MiniMax extends AI
                     partiallyBlocked2 = true;
                     for (int j = 1; j < 3; j++) {
                         String coordBelow2 = String.valueOf((char) (letter - i - j)) + number;
-                        if (coordinatesOfMinPlayerPieces.contains(coordBelow2) && j == 1) {
+                        if (coordinatesOfMinPlayerPieces.contains(coordBelow2)) {
                             fullyBlocked2 = true;
-                        }
-                        else if (!coordinatesOfMinPlayerPieces.contains(coordBelow2) && !coordinatesOfMaxPlayerPieces.contains(coordBelow2) && j == 2) {
-                            trappable2 = true;
-                            fullyBlocked2 = false;
-                            partiallyBlocked2 = false;
+                            partiallyBlocked = false;
+                            if (!coordinatesOfMinPlayerPieces.contains(coordBelow2) && !coordinatesOfMaxPlayerPieces.contains(coordBelow2) && j == 2) {
+                                trappable2 = true;
+                                fullyBlocked2 = false;
+                                partiallyBlocked2 = false;
+                            }
                         }
                     }
                 }
@@ -608,10 +610,10 @@ public class MiniMax extends AI
                     score += threeInARow/2;
                 }
                 else if (fullyBlocked && fullyBlocked2) {
-                    score += 0;
+                    score -= 2;
                 }
                 else if (trappable || trappable2) {
-                    score += threeInARow*3;
+                    score += threeInARow*2;
                 }
                 else {
                     score += threeInARow;
@@ -625,7 +627,7 @@ public class MiniMax extends AI
                     score += 0;
                 }
                 else if (trappable || trappable2) {
-                    score += fourInARow*3;
+                    score += fourInARow*2;
                 }
                 else {
                     score += fourInARow;
@@ -642,7 +644,7 @@ public class MiniMax extends AI
             trappable2 = false;
 
             // Do the same but now increase the number
-            for (int i = 1; i < 4; i++) {
+            for (int i = 1; i < 6; i++) {
                 String coordAbove = String.valueOf(letter) + (number + i);
                 if (coordinatesOfMaxPlayerPieces.contains(coordAbove)) {
                     counter += 1;
@@ -654,6 +656,7 @@ public class MiniMax extends AI
                         String coordAbove2 = String.valueOf(letter) + (number + i + j);
                         if (coordinatesOfMinPlayerPieces.contains(coordAbove2) && j == 1) {
                             fullyBlocked = true;
+                            partiallyBlocked = false;
                         }
                         else if (!coordinatesOfMinPlayerPieces.contains(coordAbove2) && !coordinatesOfMaxPlayerPieces.contains(coordAbove2) && j == 2) {
                             trappable = true;
@@ -666,7 +669,7 @@ public class MiniMax extends AI
                     break;
                 }
             }
-            for (int i = 1; i < 4; i++) {
+            for (int i = 1; i < 6; i++) {
                 String coordBelow = String.valueOf(letter) + (number - i);
                 if (coordinatesOfMaxPlayerPieces.contains(coordBelow)) {
                     counter += 1;
@@ -678,6 +681,7 @@ public class MiniMax extends AI
                         String coordBelow2 = String.valueOf(letter) + (number - i - j);
                         if (coordinatesOfMinPlayerPieces.contains(coordBelow2) && j == 1) {
                             fullyBlocked2 = true;
+                            partiallyBlocked = false;
                         }
                         else if (!coordinatesOfMinPlayerPieces.contains(coordBelow2) && !coordinatesOfMaxPlayerPieces.contains(coordBelow2) && j == 2) {
                             trappable2 = true;
@@ -730,7 +734,7 @@ public class MiniMax extends AI
             trappable2 = false;
 
             // Do the same but now increase both
-            for (int i = 1; i < 4; i++) {
+            for (int i = 1; i < 6; i++) {
                 String coordAbove = String.valueOf((char) (letter + i)) + (number + i);
                 if (coordinatesOfMaxPlayerPieces.contains(coordAbove)) {
                     counter += 1;
@@ -742,6 +746,7 @@ public class MiniMax extends AI
                         String coordAbove2 = String.valueOf((char) (letter + i + j)) + (number + i + j);
                         if (coordinatesOfMinPlayerPieces.contains(coordAbove2) && j == 1) {
                             fullyBlocked = true;
+                            partiallyBlocked = false;
                         }
                         else if (!coordinatesOfMinPlayerPieces.contains(coordAbove2) && !coordinatesOfMaxPlayerPieces.contains(coordAbove2) && j == 2) {
                             trappable = true;
@@ -754,7 +759,7 @@ public class MiniMax extends AI
                     break;
                 }
             }
-            for (int i = 1; i < 4; i++) {
+            for (int i = 1; i < 6; i++) {
                 String coordBelow = String.valueOf((char) (letter - i)) + (number - i);
                 if (coordinatesOfMaxPlayerPieces.contains(coordBelow)) {
                     counter += 1;
@@ -766,6 +771,7 @@ public class MiniMax extends AI
                         String coordBelow2 = String.valueOf((char) (letter - i - j)) + (number - i - j);
                         if (coordinatesOfMinPlayerPieces.contains(coordBelow2) && j == 1) {
                             fullyBlocked2 = true;
+                            partiallyBlocked = false;
                         }
                         else if (!coordinatesOfMinPlayerPieces.contains(coordBelow2) && !coordinatesOfMaxPlayerPieces.contains(coordBelow2) && j == 2) {
                             trappable2 = true;
@@ -787,7 +793,7 @@ public class MiniMax extends AI
                     score += 0;
                 }
                 else if (trappable || trappable2) {
-                    score += threeInARow*3;
+                    score += threeInARow*2;
                 }
                 else {
                     score += threeInARow;
@@ -801,7 +807,7 @@ public class MiniMax extends AI
                     score += 0;
                 }
                 else if (trappable || trappable2) {
-                    score += fourInARow*3;
+                    score += fourInARow*2;
                 }
                 else {
                     score += fourInARow;
