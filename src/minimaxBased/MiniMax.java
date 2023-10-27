@@ -550,10 +550,10 @@ public class MiniMax extends AI
                 }
             }
             // if the counter is 2 or higher, then the player has 3 pieces in a row give points for 3 and 4 in a row
-            if (counter >= 2) {
+            if (counter == 2) {
                 score += threeInARow;
             }
-            if (counter >= 3) {
+            else if (counter == 3) {
                 score += fourInARow;
             }
 
@@ -579,10 +579,10 @@ public class MiniMax extends AI
                     break;
                 }
             }
-            if (counter >= 2) {
+            if (counter == 2) {
                 score += threeInARow;
             }
-            if (counter >= 3) {
+            else if (counter == 3) {
                 score += fourInARow;
             }
 
@@ -608,10 +608,10 @@ public class MiniMax extends AI
                     break;
                 }
             }
-            if (counter >= 2) {
+            if (counter == 2) {
                 score += threeInARow;
             }
-            if (counter >= 3) {
+            else if (counter == 3) {
                 score += fourInARow;
             }
         }
