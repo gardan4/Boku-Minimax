@@ -200,14 +200,14 @@ public class MiniMax extends AI
             killerMoves[i][1] = new FastArrayList<>();
         }
 
-        // Loop through the depths while game is not over
+        // Iterative deepening Loop through the depths while game is not over
         for (int depth = 1; depth <= Maxdepthnew; depth++) {
 
             bestScore = Integer.MIN_VALUE;
             alpha = Integer.MIN_VALUE;
             beta = Integer.MAX_VALUE;
 
-            // Create a list to store legal moves ordered by principal variation
+            // Create a list to store legal moves ordered by principal variation and the killermoves
             FastArrayList<Move> orderedMoves = new FastArrayList<>();
             FastArrayList<Move>  killerMovesList = new FastArrayList<>();
 
@@ -291,8 +291,36 @@ public class MiniMax extends AI
     {
         Move bestMove = null;
         int olda = alpha;
-        long hashKey = context.state().fullHash() ^ context.state().mover();
-//        System.out.println("hashKey: " + hashKey);
+
+        FastArrayList<Move> nextLegalMoves = context.game().moves(context).moves();
+        FastArrayList<Move> orderedMoves = new FastArrayList<>();
+        FastArrayList<Move>  killerMovesList = new FastArrayList<>();
+
+        // Create a hashkey for the current state
+        long hashKey;
+        if (context.game().moves(context).moves().get(0) != null)
+        {
+            if (context.game().moves(context).moves().get(0).actionType().toString().contains("Remove")) {
+                hashKey = context.state().stateHash() ^ context.state().mover() ^ 1;
+            }
+            else {
+                hashKey = context.state().stateHash() ^ context.state().mover() ^ 0;
+            }
+        }
+        else {
+            hashKey = context.state().stateHash() ^ context.state().mover() ^ 0;
+        }
+
+        // Check If player has a back to back move to remove a piece
+        if (!nextLegalMoves.isEmpty()) {
+            boolean isRemoveMove = nextLegalMoves.get(0).actionType().toString().contains("Remove");
+            if (isRemoveMove)
+            {
+                //flip isMaximizingPlayer boolean value
+                isMaximizingPlayer = !isMaximizingPlayer;
+                depth = depth + 1;
+            }
+        }
 
         // Check if the current state is in the transposition table
         if (transpositionTable.containsKey(hashKey)) {
@@ -323,10 +351,6 @@ public class MiniMax extends AI
             return value;
         }
 
-        FastArrayList<Move> nextLegalMoves = context.game().moves(context).moves();
-        FastArrayList<Move> orderedMoves = new FastArrayList<>();
-        FastArrayList<Move>  killerMovesList = new FastArrayList<>();
-
         //Move ordering
         for (Move nextMove : nextLegalMoves) {
             // Check if the move is a killer move for the current depth and player
@@ -347,18 +371,7 @@ public class MiniMax extends AI
             }
         }
 
-
-        // Check If player has a back to back move to remove a piece
-        if (orderedMoves.size() != 0) {
-            boolean isRemoveMove = orderedMoves.get(0).actionType().toString().contains("Remove");
-            if (isRemoveMove)
-            {
-                //flip isMaximizingPlayer boolean value
-                isMaximizingPlayer = !isMaximizingPlayer;
-                depth = depth + 1;
-            }
-        }
-
+        // Maximizing player
         if (isMaximizingPlayer)
         {
             int bestScore = Integer.MIN_VALUE;
