@@ -343,7 +343,7 @@ public class MiniMax extends AI
             }
         }
         // give info about the transpositionTable, the length
-//        System.out.println("transpositionTable: " + transpositionTable.size());
+        // System.out.println("transpositionTable: " + transpositionTable.size());
 
         if (depth == 0 || context.trial().over()) {
             // Implement your evaluation function here
@@ -377,10 +377,9 @@ public class MiniMax extends AI
             int bestScore = Integer.MIN_VALUE;
             Context simulatedContext = new TempContext(context);
 
-
             // Loop through the legal moves
             for (Move nextMove : orderedMoves) {
-
+                // Apply the move
                 simulatedContext.game().apply(simulatedContext, nextMove);
 
                 int score = minimax(simulatedContext, depth - 1, alpha, beta, false, maxPlayerID, killerMoves);
@@ -388,6 +387,7 @@ public class MiniMax extends AI
                 // undo the move
                 simulatedContext.game().undo(simulatedContext);
 
+                // Update alpha, beta and killermoves
                 alpha = Math.max(alpha, score);
                 if (score > bestScore) {
                     bestScore = score;
@@ -410,16 +410,18 @@ public class MiniMax extends AI
                 }
 
             }
-
             return bestScore;
         }
+
         // Minimizing player
         else
         {
             int bestScore = Integer.MAX_VALUE;
             Context simulatedContext = new TempContext(context);
 
+            // Loop through the legal moves
             for (Move nextMove : orderedMoves) {
+                // Apply the move
                 simulatedContext.game().apply(simulatedContext, nextMove);
 
                 int score = minimax(simulatedContext, depth - 1, alpha, beta, true, maxPlayerID, killerMoves);
@@ -427,6 +429,7 @@ public class MiniMax extends AI
                 // undo the move
                 simulatedContext.game().undo(simulatedContext);
 
+                // Update alpha, beta and killermoves
                 beta = Math.min(beta, score);
                 if (score < bestScore) {
                     bestScore = score;
@@ -450,7 +453,6 @@ public class MiniMax extends AI
             }
             return bestScore;
         }
-
     }
 
     private int evaluate(Context context, boolean isMaximizingPlayer, int maxPlayerID) {
@@ -464,6 +466,7 @@ public class MiniMax extends AI
 
         // initialise score
         int score = 0;
+
         //get the coordinates of the pieces of each player
         TIntArrayList indicesOfMaxPlayerPieces = context.state().owned().sites(maxPlayerID);
         TIntArrayList indicesOfMinPlayerPieces = context.state().owned().sites(3 - maxPlayerID);
@@ -496,19 +499,17 @@ public class MiniMax extends AI
         for (Move move : moves) {
             if (move.actionType().toString().contains("Remove")) {
                 if (isMaximizingPlayer) {
-                    score -= 5;
+                    score += 5;
                 }
                 else {
-                    score += 5;
+                    score -= 5;
                 }
             }
         }
 
         // Check if the player has 3 or 4 pieces in a row
-        //todo: lines are not that useful if they cant be finished
-        //todo: make lines that need to be blocked in such a way that they match up with another opponent piece so that an opponent piece can possibly be removed
         score += checkThreeOrFourInARow(coordinatesOfMaxPlayerPieces);
-        score -= (int) (checkThreeOrFourInARow(coordinatesOfMinPlayerPieces));
+        score -= checkThreeOrFourInARow(coordinatesOfMinPlayerPieces);
 
         return score;
     }
@@ -535,6 +536,7 @@ public class MiniMax extends AI
         int score = 0;
         int threeInARow = 5;
         int fourInARow = 15;
+
         //loop over the coordinates of the player
         for (String coord : coordinatesOfPlayerPieces) {
             // get the letter and number of the coordinate
@@ -572,7 +574,6 @@ public class MiniMax extends AI
 
             // reset the counter
             counter = 0;
-
             // Do the same but now increase the number
             for (int i = 1; i < 4; i++) {
                 String coordAbove = String.valueOf(letter) + (number + i);
@@ -601,7 +602,6 @@ public class MiniMax extends AI
 
             // reset the counter
             counter = 0;
-
             // Do the same but now increase both
             for (int i = 1; i < 4; i++) {
                 String coordAbove = String.valueOf((char) (letter + i)) + (number + i);
